@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ymse3p.app.audiorecorder">
 
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
         android:name="ymse3p.app.audiorecorder.MyApplication"
         android:allowBackup="true"
