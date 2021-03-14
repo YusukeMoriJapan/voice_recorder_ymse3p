@@ -9,6 +9,7 @@ import ymse3p.app.audiorecorder.MyApplication
 import java.io.File
 import java.io.IOException
 import java.lang.IllegalStateException
+import java.lang.RuntimeException
 
 class MyAudioRecorder(val context: Context) : MediaRecorder() {
 
@@ -42,7 +43,15 @@ class MyAudioRecorder(val context: Context) : MediaRecorder() {
             return false
         } catch (e: IllegalStateException) {
             Log.e("MediaRecorder", e.message.orEmpty())
+            Toast.makeText(context, "エラー発生のため、録音データは保存されませんでした。", Toast.LENGTH_SHORT).show()
+            reset()
+            return false
+        } catch (e: RuntimeException) {
+            Log.e("MediaRecorder", e.message.orEmpty())
+            File(context.filesDir, "default_name.mp4").delete()
+            reset()
+            Toast.makeText(context, "エラー発生のため、録音データは保存されませんでした。", Toast.LENGTH_SHORT).show()
+            return false
         }
-        return recordingState
     }
 }
