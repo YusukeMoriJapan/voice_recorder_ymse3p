@@ -9,10 +9,12 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
+import ymse3p.app.audiorecorder.util.CannotSaveAudioException
+import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 
@@ -42,9 +44,13 @@ class MainActivity : AppCompatActivity() {
 
         binding.mic.setOnClickListener {
             if (mainViewModel.isRecording.value) {
-                mainViewModel.changeRecordingState(
-                    mainViewModel.myAudioRecorder.stopRecording(mainViewModel.isRecording.value)
-                )
+                try {
+                    mainViewModel.stopRecording()
+                    Toast.makeText(this, "録音を終了しました", Toast.LENGTH_SHORT).show()
+                    findNavController(R.id.nav_host_fragment).navigate(R.id.action_FirstFragment_to_audioSaveBottomSheet)
+                } catch (e: CannotSaveAudioException) {
+                    Toast.makeText(this, "エラー発生のため、録音データは保存されませんでした。", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 requestPermissions(
                     arrayOf(Manifest.permission.RECORD_AUDIO),
@@ -77,10 +83,13 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
             grantResults.forEach {
                 if (it == PackageManager.PERMISSION_GRANTED) {
-                    mainViewModel.changeRecordingState(
-                        mainViewModel.myAudioRecorder.startRecording(mainViewModel.isRecording.value)
-                    )
-                    return
+                    try {
+                        mainViewModel.startRecording()
+                        Toast.makeText(this, "録音を開始しました", Toast.LENGTH_SHORT).show()
+                        return
+                    } catch (e: CannotStartRecordingException) {
+                        Toast.makeText(this, "エラーが発生しました", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             Toast.makeText(
