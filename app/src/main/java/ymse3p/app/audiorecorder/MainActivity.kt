@@ -1,6 +1,7 @@
 package ymse3p.app.audiorecorder
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +12,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import ymse3p.app.audiorecorder.data.database.dataStore
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
@@ -81,22 +84,27 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
-            grantResults.forEach {
-                if (it == PackageManager.PERMISSION_GRANTED) {
-                    try {
-                        mainViewModel.startRecording()
-                        Toast.makeText(this, "録音を開始しました", Toast.LENGTH_SHORT).show()
-                        return
-                    } catch (e: CannotStartRecordingException) {
-                        Toast.makeText(this, "エラーが発生しました", Toast.LENGTH_SHORT).show()
+            lifecycleScope.launchWhenCreated {
+                grantResults.forEach {
+                    if (it == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            mainViewModel.startRecording()
+                            Toast.makeText(this@MainActivity, "録音を開始しました", Toast.LENGTH_SHORT)
+                                .show()
+                            return@launchWhenCreated
+                        } catch (e: CannotStartRecordingException) {
+                            Toast.makeText(this@MainActivity, "エラーが発生しました", Toast.LENGTH_SHORT)
+                                .show()
+                            return@launchWhenCreated
+                        }
                     }
                 }
+                Toast.makeText(
+                    this@MainActivity,
+                    "録音機能の使用を許可して下さい",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            Toast.makeText(
-                this,
-                "録音機能の使用を許可して下さい",
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 }
