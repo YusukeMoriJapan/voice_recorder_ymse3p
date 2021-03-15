@@ -12,5 +12,8 @@ class Constants {
         //Permission request code
         const val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
+        //Data store preferences
+        const val RECORDED_AUDIO_ID = "recorded_audio_id"
+        const val PREFERENCES_NAME = "recorded_audio_number"
     }
 }
