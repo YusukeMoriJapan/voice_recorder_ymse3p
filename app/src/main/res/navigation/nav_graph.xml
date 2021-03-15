@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+        <action
+            android:id="@+id/action_FirstFragment_to_audioSaveBottomSheet"
+            app:destination="@id/audioSaveBottomSheet" />
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
@@ -25,4 +28,8 @@
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
     </fragment>
+    <dialog
+        android:id="@+id/audioSaveBottomSheet"
+        android:name="ymse3p.app.audiorecorder.AudioSaveBottomSheet"
+        android:label="AudioSaveBottomSheet" />
 </navigation>
