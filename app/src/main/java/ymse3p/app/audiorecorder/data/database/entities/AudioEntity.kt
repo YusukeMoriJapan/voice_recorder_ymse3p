@@ -1,7 +1,6 @@
 package ymse3p.app.audiorecorder.data.database.entities
 
 import android.net.Uri
-import android.text.InputFilter
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import ymse3p.app.audiorecorder.util.Constants.Companion.AUDIO_TABLE
@@ -14,8 +13,16 @@ class AudioEntity(
     val audioUri: Uri,
     val audioCreateDate: Calendar,
     val audioTitle: String,
-    val audioLength: Int
+    val audioDuration: Int
 ) {
-
-
+    companion object {
+        fun createAudioEntity(
+            audioUri: Uri,
+            audioCreateDate: Calendar,
+            audioTitle: String,
+            audioDuration: Int
+        ): AudioEntity {
+            return AudioEntity(0, audioUri, audioCreateDate, audioTitle, audioDuration)
+        }
+    }
 }
