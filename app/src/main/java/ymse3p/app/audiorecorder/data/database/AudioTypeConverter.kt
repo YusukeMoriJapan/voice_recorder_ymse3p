@@ -14,7 +14,7 @@ class AudioTypeConverter {
 
     @TypeConverter
     fun calendarToString(calendar: Calendar): String {
-        return dataFormat.format(calendar)
+        return dataFormat.format(calendar.time)
     }
 
     @TypeConverter

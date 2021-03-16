@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     mainViewModel.stopRecording()
                     Toast.makeText(this, "録音を終了しました", Toast.LENGTH_SHORT).show()
-                    findNavController(R.id.nav_host_fragment).navigate(R.id.action_FirstFragment_to_audioSaveBottomSheet)
+                    findNavController(R.id.nav_host_fragment).navigate(R.id.action_global_audioSaveBottomSheet)
                 } catch (e: CannotSaveAudioException) {
                     Toast.makeText(this, "エラー発生のため、録音データは保存されませんでした。", Toast.LENGTH_SHORT).show()
                 }
