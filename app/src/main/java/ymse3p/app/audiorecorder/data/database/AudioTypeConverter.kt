@@ -4,13 +4,13 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.room.TypeConverter
-import ymse3p.app.audiorecorder.util.Constants.Companion.DATE_FORMAT
+import ymse3p.app.audiorecorder.util.Constants.Companion.DATABASE_DATE_FORMAT
 import java.text.SimpleDateFormat
 import java.util.*
 
 class AudioTypeConverter {
 
-    private val dataFormat = SimpleDateFormat(DATE_FORMAT)
+    private val dataFormat = SimpleDateFormat(DATABASE_DATE_FORMAT)
 
     @TypeConverter
     fun calendarToString(calendar: Calendar): String {

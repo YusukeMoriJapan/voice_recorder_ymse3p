@@ -6,21 +6,36 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.Toast
+import androidx.activity.addCallback
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import ymse3p.app.audiorecorder.adapter.AudioAdapter
+import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
+import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 
-/**
- * A simple [Fragment] subclass as the default destination in the navigation.
- */
+
 @AndroidEntryPoint
 class FirstFragment : Fragment() {
 
+    private val mainViewModel by activityViewModels<MainViewModel>()
+
+    private lateinit var _binding: FragmentFirstBinding
+    private val binding get() = _binding
+
+    private val mAdapter by lazy { AudioAdapter() }
+
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_first, container, false)
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentFirstBinding.inflate(layoutInflater, container, false)
+        setupRecyclerView()
+        readDatabase()
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -29,5 +44,28 @@ class FirstFragment : Fragment() {
         view.findViewById<Button>(R.id.button_first).setOnClickListener {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
+    }
+
+    private fun setupRecyclerView() {
+        binding.audioListRecyclerview.adapter = mAdapter
+        binding.audioListRecyclerview.layoutManager = LinearLayoutManager(requireContext())
+        showShimmerEffect()
+    }
+
+    private fun readDatabase() {
+        lifecycleScope.launchWhenCreated {
+            mainViewModel.readAudio.observe(viewLifecycleOwner, { database ->
+                mAdapter.setData(database)
+                hideShimmerEffect()
+            })
+        }
+    }
+
+    private fun hideShimmerEffect() {
+        binding.audioListRecyclerview.hideShimmer()
+    }
+
+    private fun showShimmerEffect() {
+        binding.audioListRecyclerview.showShimmer()
     }
 }

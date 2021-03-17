@@ -104,7 +104,7 @@ class MainViewModel @Inject constructor(
 
 
     /** ROOM DATABASE */
-    private val readAudio: LiveData<List<AudioEntity>> =
+    val readAudio: LiveData<List<AudioEntity>> =
         repository.localDataSource.readAudio().asLiveData()
 
     fun insertAudio(
