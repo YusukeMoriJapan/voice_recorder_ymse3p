@@ -13,6 +13,9 @@ interface AudioDao {
     @Query("SELECT * FROM audio_table ORDER BY id ASC")
     fun readAudio(): Flow<List<AudioEntity>>
 
+    @Query("SELECT * FROM audio_table WHERE id = :id")
+    fun readAudioFromId(id: Int): Flow<AudioEntity>
+
     @Delete
     suspend fun deleteAudio(audioEntity: AudioEntity)
 

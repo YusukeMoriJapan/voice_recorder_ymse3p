@@ -1,9 +1,15 @@
 package ymse3p.app.audiorecorder
 
 import android.Manifest
-import android.content.Context
+import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.RemoteException
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
@@ -11,25 +17,87 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
+import com.google.android.exoplayer2.SimpleExoPlayer
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
-import ymse3p.app.audiorecorder.data.database.dataStore
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
+import ymse3p.app.audiorecorder.services.MusicService
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var simpleExoPlayer: SimpleExoPlayer
 
     private lateinit var _binding: ActivityMainBinding
     private val binding get() = _binding
     private val mainViewModel by lazy { ViewModelProvider(this).get(MainViewModel::class.java) }
 
+    private val mediaBrowser: MediaBrowserCompat by lazy {
+
+        val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
+            override fun onChildrenLoaded(
+                parentId: String,
+                children: MutableList<MediaBrowserCompat.MediaItem>
+            ) {
+                if (mediaController.playbackState == null)
+                    children[0].mediaId?.let { play(it) }
+            }
+        }
+
+        val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+            override fun onConnected() {
+                try {
+                    if (mediaController.playbackState != null && mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
+                        controllerCallback.onMetadataChanged(mediaController.metadata)
+                        controllerCallback.onPlaybackStateChanged(mediaController.playbackState)
+                    }
+
+                } catch (e: RemoteException) {
+                    e.printStackTrace()
+                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
+                }
+
+                mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
+            }
+        }
+        MediaBrowserCompat(
+            this, ComponentName(this, MusicService::class.java),
+            connectionCallback, null
+        )
+    }
+
+    private val mediaController: MediaControllerCompat by lazy {
+        MediaControllerCompat(this, mediaBrowser.sessionToken)
+            .apply { registerCallback(controllerCallback) }
+    }
+
+    private val controllerCallback = object : MediaControllerCompat.Callback() {
+        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+            super.onMetadataChanged(metadata)
+        }
+
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            super.onPlaybackStateChanged(state)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(Intent(this, MusicService::class.java))
+        } else {
+            startService(Intent(this, MusicService::class.java))
+        }
+
+        mediaBrowser.connect()
+
         mainViewModel
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -60,8 +128,8 @@ class MainActivity : AppCompatActivity() {
                     REQUEST_RECORD_AUDIO_PERMISSION
                 )
             }
-
         }
+        binding.playerControlView.player = simpleExoPlayer
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -108,7 +176,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaBrowser.disconnect()
+        if (mediaController.playbackState.state != PlaybackStateCompat.STATE_PLAYING)
+            stopService(Intent(this, MusicService::class.java))
+    }
+
+    private fun play(id: String) {
+        mediaController.transportControls.playFromMediaId(id, null)
     }
 }

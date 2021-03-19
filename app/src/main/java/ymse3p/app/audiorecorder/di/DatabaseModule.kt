@@ -26,7 +26,7 @@ object DatabaseModule {
     ).build()
 
 
-        @Singleton
-        @Provides
-        fun provideDao(database: AudioDatabase) = database.audioDao()
+    @Singleton
+    @Provides
+    fun provideDao(database: AudioDatabase) = database.audioDao()
 }
