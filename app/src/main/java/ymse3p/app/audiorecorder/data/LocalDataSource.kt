@@ -12,6 +12,10 @@ class LocalDataSource @Inject constructor(
         return audioDao.readAudio()
     }
 
+    fun readAudioFromId(id: Int): Flow<AudioEntity> {
+        return audioDao.readAudioFromId(id)
+    }
+
     suspend fun insertAudio(audioEntity: AudioEntity) {
         return audioDao.insertAudio(audioEntity)
     }
