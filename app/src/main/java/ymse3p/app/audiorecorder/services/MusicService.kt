@@ -114,6 +114,10 @@ class MusicService : MediaBrowserServiceCompat() {
             override fun onPlaybackStateChanged(state: Int) {
                 updatePlaybackState()
             }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updatePlaybackState()
+            }
         })
 
         /** Media sessionに再生リスト(queue)を登録 */
@@ -130,23 +134,6 @@ class MusicService : MediaBrowserServiceCompat() {
                 }
                 delay(500)
             }
-        }
-
-        /** 通知用のチェンネルを登録 */
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val notificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel =
-                NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID_PLAYBACK,
-                    "再生中のオーディオ",
-                    NotificationManager.IMPORTANCE_DEFAULT
-                ).apply {
-                    enableLights(true)
-                    lightColor = Color.BLUE
-                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-                }
-            notificationManager.createNotificationChannel(channel)
         }
     }
 
@@ -172,6 +159,123 @@ class MusicService : MediaBrowserServiceCompat() {
 //            result.sendError(null)
             result.sendResult(mutableListOf())
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        /** 通知用のチェンネルを登録 */
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel =
+                NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID_PLAYBACK,
+                    "再生中のオーディオ",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                ).apply {
+                    enableLights(true)
+                    lightColor = Color.BLUE
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        /** 現在再生している曲のMediaMetadataを取得　*/
+        val controller = mediaSession.controller
+        val mediaMetadata = controller.metadata
+
+        val description = mediaMetadata?.description
+
+        /** 通知をクリックしてActivityを開くIntentを作成 */
+        fun createContentIntent(): PendingIntent {
+            val openUi = Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
+            }
+
+            return PendingIntent.getActivity(this, 1, openUi, PendingIntent.FLAG_CANCEL_CURRENT)
+        }
+
+        /** 通知バーのアクションで使用するPendingIntentを定義 */
+        val pendingIntentPrev = MediaButtonReceiver.buildMediaButtonPendingIntent(
+            this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+        )
+        val pendingIntentNext = MediaButtonReceiver.buildMediaButtonPendingIntent(
+            this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+        )
+        val pendingIntentPause = MediaButtonReceiver.buildMediaButtonPendingIntent(
+            this, PlaybackStateCompat.ACTION_PAUSE
+        )
+        val pendingIntentPlay = MediaButtonReceiver.buildMediaButtonPendingIntent(
+            this, PlaybackStateCompat.ACTION_PLAY
+        )
+
+        /** 通知に使用するスタイルを定義 */
+        val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle().run {
+            setMediaSession(mediaSession.sessionToken)
+            /** 通知を小さくたたんだ時に表示されるコントロールのインデックスを定義 */
+            setShowActionsInCompactView(0)
+            return@run this
+        }
+
+        val notificationBuilder =
+            NotificationCompat.Builder(applicationContext, NOTIFICATION_CHANNEL_ID_PLAYBACK)
+                .apply {
+//                  setContentText(description.subtitle)
+//                  setSubText(description.description)
+//                  setLargeIcon(description.iconBitmap)
+                    /** 通知領域色の設定　*/
+//                  setColor(ContextCompat.getColor(this@MusicService, R.color.colorAccent))
+
+                    setContentTitle(description?.title)
+                    /** 通知クリック時のインテントを設定 */
+                    setContentIntent(createContentIntent())
+                    /** 通知がスワイプして消された際のインテントを設定　*/
+                    setDeleteIntent(
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(
+                            this@MusicService,
+                            PlaybackStateCompat.ACTION_STOP
+                        )
+                    )
+                    /** ロック画面でも通知を表示する */
+                    setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    setStyle(mediaStyle)
+
+                    setSmallIcon(R.drawable.ic_launcher_foreground)
+
+                    /** 通知バーにアクションを設定*/
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_pause, "pause",
+                            pendingIntentPause
+                        )
+                    )
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_play, "play",
+                            pendingIntentPlay
+                        )
+                    )
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_previous,
+                            "prev", pendingIntentPrev
+                        )
+                    )
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_next, "next",
+                            pendingIntentNext
+                        )
+                    )
+
+
+                }
+
+        startForeground(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notificationBuilder.build())
+
+//        /** 再生中以外はスワイプによる通知削除を許可 */
+//        if (controller.playbackState?.state != PlaybackStateCompat.STATE_PLAYING)
+//            stopForeground(false)
+        return START_STICKY
     }
 
 
@@ -236,109 +340,109 @@ class MusicService : MediaBrowserServiceCompat() {
 
     /** 通知を作成。サービスをForegroundに設定 */
     private fun createNotification() {
-        /** 現在再生している曲のMediaMetadataを取得　*/
-        val controller = mediaSession.controller
-        val mediaMetadata = controller.metadata
-
-        if (mediaMetadata == null && mediaSession.isActive) return
-
-        val description = mediaMetadata?.description
-
-        /** 通知をクリックしてActivityを開くIntentを作成 */
-        fun createContentIntent(): PendingIntent {
-            val openUi = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
-            }
-
-            return PendingIntent.getActivity(this, 1, openUi, PendingIntent.FLAG_CANCEL_CURRENT)
-        }
-
-        /** 通知バーのアクションで使用するPendingIntentを定義 */
-        val pendingIntentPrev = MediaButtonReceiver.buildMediaButtonPendingIntent(
-            this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-        )
-        val pendingIntentNext = MediaButtonReceiver.buildMediaButtonPendingIntent(
-            this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-        )
-        val pendingIntentPause = MediaButtonReceiver.buildMediaButtonPendingIntent(
-            this, PlaybackStateCompat.ACTION_PAUSE
-        )
-        val pendingIntentPlay = MediaButtonReceiver.buildMediaButtonPendingIntent(
-            this, PlaybackStateCompat.ACTION_PLAY
-        )
-
-        /** 通知に使用するスタイルを定義 */
-        val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle().run {
-            setMediaSession(mediaSession.sessionToken)
-
-            /** 通知を小さくたたんだ時に表示されるコントロールのインデックスを定義 */
-            setShowActionsInCompactView(1)
-            return@run this
-        }
-
-        val notificationBuilder =
-            NotificationCompat.Builder(applicationContext, NOTIFICATION_CHANNEL_ID_PLAYBACK)
-                .apply {
-//                  setContentText(description.subtitle)
-//                  setSubText(description.description)
-//                  setLargeIcon(description.iconBitmap)
-                    /** 通知領域色の設定　*/
-//                  setColor(ContextCompat.getColor(this@MusicService, R.color.colorAccent))
-
-                    setContentTitle(description?.title)
-                    /** 通知クリック時のインテントを設定 */
-                    setContentIntent(createContentIntent())
-                    /** 通知がスワイプして消された際のインテントを設定　*/
-                    setDeleteIntent(
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(
-                            this@MusicService,
-                            PlaybackStateCompat.ACTION_STOP
-                        )
-                    )
-                    /** ロック画面でも通知を表示する */
-                    setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    setStyle(mediaStyle)
-
-                    setSmallIcon(R.drawable.ic_launcher_foreground)
-
-                    /** 通知バーにアクションを設定*/
-                    addAction(
-                        NotificationCompat.Action(
-                            R.drawable.exo_controls_previous,
-                            "prev", pendingIntentPrev
-                        )
-                    )
-                    addAction(
-                        NotificationCompat.Action(
-                            R.drawable.exo_controls_next, "next",
-                            pendingIntentNext
-                        )
-                    )
-
-                    /** 再生状態で表示するアクションを分岐 */
-                    if (controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
-                        addAction(
-                            NotificationCompat.Action(
-                                R.drawable.exo_controls_pause, "pause",
-                                pendingIntentPause
-                            )
-                        )
-                    else
-                        addAction(
-                            NotificationCompat.Action(
-                                R.drawable.exo_controls_play, "play",
-                                pendingIntentPlay
-                            )
-                        )
-                }
-
-        notificationManager.notify(FOREGROUND_NOTIFICATION_ID_PLAYBACK,notificationBuilder.build())
-
-        /** 再生中以外はスワイプによる通知削除を許可 */
-        if (controller.playbackState.state != PlaybackStateCompat.STATE_PLAYING)
-            stopForeground(false)
+//        /** 現在再生している曲のMediaMetadataを取得　*/
+//        val controller = mediaSession.controller
+//        val mediaMetadata = controller.metadata
+//
+//        if (mediaMetadata == null && mediaSession.isActive) return
+//
+//        val description = mediaMetadata?.description
+//
+//        /** 通知をクリックしてActivityを開くIntentを作成 */
+//        fun createContentIntent(): PendingIntent {
+//            val openUi = Intent(this, MainActivity::class.java).apply {
+//                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+//                addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT)
+//            }
+//
+//            return PendingIntent.getActivity(this, 1, openUi, PendingIntent.FLAG_CANCEL_CURRENT)
+//        }
+//
+//        /** 通知バーのアクションで使用するPendingIntentを定義 */
+//        val pendingIntentPrev = MediaButtonReceiver.buildMediaButtonPendingIntent(
+//            this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+//        )
+//        val pendingIntentNext = MediaButtonReceiver.buildMediaButtonPendingIntent(
+//            this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+//        )
+//        val pendingIntentPause = MediaButtonReceiver.buildMediaButtonPendingIntent(
+//            this, PlaybackStateCompat.ACTION_PAUSE
+//        )
+//        val pendingIntentPlay = MediaButtonReceiver.buildMediaButtonPendingIntent(
+//            this, PlaybackStateCompat.ACTION_PLAY
+//        )
+//
+//        /** 通知に使用するスタイルを定義 */
+//        val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle().run {
+//            setMediaSession(mediaSession.sessionToken)
+//
+//            /** 通知を小さくたたんだ時に表示されるコントロールのインデックスを定義 */
+//            setShowActionsInCompactView(1)
+//            return@run this
+//        }
+//
+//        val notificationBuilder =
+//            NotificationCompat.Builder(applicationContext, NOTIFICATION_CHANNEL_ID_PLAYBACK)
+//                .apply {
+////                  setContentText(description.subtitle)
+////                  setSubText(description.description)
+////                  setLargeIcon(description.iconBitmap)
+//                    /** 通知領域色の設定　*/
+////                  setColor(ContextCompat.getColor(this@MusicService, R.color.colorAccent))
+//
+//                    setContentTitle(description?.title)
+//                    /** 通知クリック時のインテントを設定 */
+//                    setContentIntent(createContentIntent())
+//                    /** 通知がスワイプして消された際のインテントを設定　*/
+//                    setDeleteIntent(
+//                        MediaButtonReceiver.buildMediaButtonPendingIntent(
+//                            this@MusicService,
+//                            PlaybackStateCompat.ACTION_STOP
+//                        )
+//                    )
+//                    /** ロック画面でも通知を表示する */
+//                    setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+//                    setStyle(mediaStyle)
+//
+//                    setSmallIcon(R.drawable.ic_launcher_foreground)
+//
+//                    /** 通知バーにアクションを設定*/
+//                    addAction(
+//                        NotificationCompat.Action(
+//                            R.drawable.exo_controls_previous,
+//                            "prev", pendingIntentPrev
+//                        )
+//                    )
+//                    addAction(
+//                        NotificationCompat.Action(
+//                            R.drawable.exo_controls_next, "next",
+//                            pendingIntentNext
+//                        )
+//                    )
+//
+//                    /** 再生状態で表示するアクションを分岐 */
+//                    if (controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
+//                        addAction(
+//                            NotificationCompat.Action(
+//                                R.drawable.exo_controls_pause, "pause",
+//                                pendingIntentPause
+//                            )
+//                        )
+//                    else
+//                        addAction(
+//                            NotificationCompat.Action(
+//                                R.drawable.exo_controls_play, "play",
+//                                pendingIntentPlay
+//                            )
+//                        )
+//                }
+//
+//        notificationManager.notify(FOREGROUND_NOTIFICATION_ID_PLAYBACK,notificationBuilder.build())
+//
+//        /** 再生中以外はスワイプによる通知削除を許可 */
+//        if (controller.playbackState.state != PlaybackStateCompat.STATE_PLAYING)
+//            stopForeground(false)
 
     }
 
@@ -448,7 +552,7 @@ class MusicService : MediaBrowserServiceCompat() {
         "1" to MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, "1")
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "JAzz in Paris")
-            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 2000)
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 200000)
             .build(),
         "2" to MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, "2")
