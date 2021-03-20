@@ -13,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
@@ -53,12 +55,11 @@ class FirstFragment : Fragment() {
     }
 
     private fun readDatabase() {
-        lifecycleScope.launchWhenCreated {
-            mainViewModel.readAudio.observe(viewLifecycleOwner, { database ->
-                mAdapter.setData(database)
-                hideShimmerEffect()
-            })
-        }
+        mainViewModel.readAudio.observe(viewLifecycleOwner, { database ->
+            mAdapter.setData(database)
+            hideShimmerEffect()
+        })
+
     }
 
     private fun hideShimmerEffect() {
