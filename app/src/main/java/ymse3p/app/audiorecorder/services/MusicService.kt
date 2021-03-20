@@ -1,9 +1,6 @@
 package ymse3p.app.audiorecorder.services
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -212,7 +209,7 @@ class MusicService : MediaBrowserServiceCompat() {
         val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle().run {
             setMediaSession(mediaSession.sessionToken)
             /** 通知を小さくたたんだ時に表示されるコントロールのインデックスを定義 */
-            setShowActionsInCompactView(0)
+            setShowActionsInCompactView(3)
             return@run this
         }
 
@@ -244,8 +241,8 @@ class MusicService : MediaBrowserServiceCompat() {
                     /** 通知バーにアクションを設定*/
                     addAction(
                         NotificationCompat.Action(
-                            R.drawable.exo_controls_pause, "pause",
-                            pendingIntentPause
+                            R.drawable.exo_controls_previous,
+                            "prev", pendingIntentPrev
                         )
                     )
                     addAction(
@@ -256,8 +253,8 @@ class MusicService : MediaBrowserServiceCompat() {
                     )
                     addAction(
                         NotificationCompat.Action(
-                            R.drawable.exo_controls_previous,
-                            "prev", pendingIntentPrev
+                            R.drawable.exo_controls_pause, "pause",
+                            pendingIntentPause
                         )
                     )
                     addAction(
@@ -289,8 +286,9 @@ class MusicService : MediaBrowserServiceCompat() {
         }
         simpleExoPlayer.apply {
             stop()
-            release()
+//            release()
         }
+        stopForeground(Service.STOP_FOREGROUND_REMOVE)
     }
 
 
