@@ -8,6 +8,9 @@ import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.AudioAttributesCompat
 import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
+import com.google.android.exoplayer2.DefaultLoadControl
+import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,6 +21,7 @@ import kotlinx.coroutines.Job
 import ymse3p.app.audiorecorder.services.AudioNotificationBuilder
 import ymse3p.app.audiorecorder.services.AudioService
 import javax.inject.Qualifier
+import javax.inject.Singleton
 
 
 @Qualifier
@@ -27,6 +31,22 @@ annotation class ServiceContext
 @Module
 @InstallIn(ServiceComponent::class)
 object ServicePlaybackProvidesModule {
+
+    @ServiceScoped
+    @Provides
+    fun provideExoPlayer(
+        @ApplicationContext context: Context,
+    ): SimpleExoPlayer {
+
+        val trackSelector = DefaultTrackSelector(context)
+        val loadControl = DefaultLoadControl()
+
+        return SimpleExoPlayer.Builder(context).run {
+            setTrackSelector(trackSelector)
+            setLoadControl(loadControl)
+            build()
+        }
+    }
 
     @ServiceScoped
     @Provides

@@ -22,7 +22,7 @@ class AudioNotificationBuilder @Inject constructor(
 ) {
 
     /** 現在再生している曲のMediaMetadataを取得　*/
-    private val controller = mediaSession.controller
+    private val controller get() = mediaSession.controller
     private val mediaMetadata get() = controller.metadata
     private val description get() = mediaMetadata?.description
 

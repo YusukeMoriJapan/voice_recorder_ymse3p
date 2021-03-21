@@ -221,7 +221,7 @@ class AudioService : MediaBrowserServiceCompat() {
         }
         simpleExoPlayer.apply {
             stop()
-//            release()
+            release()
         }
         notificationManager.cancelAll()
         stopForeground(Service.STOP_FOREGROUND_REMOVE)

@@ -13,6 +13,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -26,13 +27,11 @@ import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
-    @Inject
-    lateinit var simpleExoPlayer: SimpleExoPlayer
 
     private lateinit var _binding: ActivityMainBinding
     private val binding get() = _binding
@@ -79,11 +78,37 @@ class MainActivity : AppCompatActivity() {
 
     private val controllerCallback = object : MediaControllerCompat.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-            super.onMetadataChanged(metadata)
+            metadata?.let { metadata ->
+                binding.textViewTitle.text = metadata.description.title
+                binding.textViewDuration.text = milliSecToTimeString(
+                    metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                )
+                binding.seekBar.max =
+                    metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION).toInt()
+            }
         }
 
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-            super.onPlaybackStateChanged(state)
+            if (state == null) return
+
+            if (state.state == PlaybackStateCompat.STATE_PLAYING) {
+                binding.buttonPlay.apply {
+                    setOnClickListener {
+                        mediaController.transportControls.pause()
+                    }
+                    setImageResource(R.drawable.ic_baseline_pause_24)
+                }
+            } else {
+                binding.buttonPlay.apply {
+                    setOnClickListener {
+                        mediaController.transportControls.play()
+                    }
+                    setImageResource(R.drawable.ic_baseline_play_arrow_24)
+                }
+            }
+
+            binding.textViewPosition.text = milliSecToTimeString(state.position)
+            binding.seekBar.progress = state.position.toInt()
         }
     }
 
@@ -129,7 +154,28 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-        binding.playerControlView.player = simpleExoPlayer
+
+        /** 再生用UIの設定 */
+        binding.buttonPrev.setOnClickListener {
+            mediaController.transportControls.skipToPrevious()
+        }
+        binding.buttonNext.setOnClickListener {
+            mediaController.transportControls.skipToNext()
+        }
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.let { seekBar ->
+                    mediaController.transportControls.seekTo(seekBar.progress.toLong())
+                }
+            }
+
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -179,11 +225,21 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         mediaBrowser.disconnect()
-        if (mediaController.playbackState.state != PlaybackStateCompat.STATE_PLAYING)
-            stopService(Intent(this, AudioService::class.java))
+        if (mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
+        else stopService(Intent(this, AudioService::class.java))
+
+
     }
 
     private fun play(id: String) {
         mediaController.transportControls.playFromMediaId(id, null)
+    }
+
+    private fun milliSecToTimeString(duration: Long): String {
+        val minutes =
+            TimeUnit.MILLISECONDS.toMinutes(duration)
+        val seconds =
+            TimeUnit.MILLISECONDS.toSeconds(duration)
+        return "${minutes}:${seconds}"
     }
 }
