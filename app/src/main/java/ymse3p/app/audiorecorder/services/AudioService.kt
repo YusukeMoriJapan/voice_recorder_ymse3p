@@ -1,10 +1,8 @@
 package ymse3p.app.audiorecorder.services
 
 import android.app.*
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.media.AudioManager
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -12,33 +10,23 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.media.AudioAttributesCompat
-import androidx.media.AudioFocusRequestCompat
-import androidx.media.AudioManagerCompat
 import androidx.media.MediaBrowserServiceCompat
-import androidx.media.session.MediaButtonReceiver
-import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import ymse3p.app.audiorecorder.MainActivity
-import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
-import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
-import ymse3p.app.audiorecorder.di.ServiceContext
-import ymse3p.app.audiorecorder.di.ServiceScopedPlaybackModule
+import ymse3p.app.audiorecorder.di.playbackmodule.ServiceContext
 import ymse3p.app.audiorecorder.util.Constants.Companion.FOREGROUND_NOTIFICATION_ID_PLAYBACK
 import ymse3p.app.audiorecorder.util.Constants.Companion.NOTIFICATION_CHANNEL_ID_PLAYBACK
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MusicService : MediaBrowserServiceCompat() {
+class AudioService : MediaBrowserServiceCompat() {
 
     private val rootId = "root"
-    private val tag = MusicService::class.simpleName.orEmpty()
+    private val tag = AudioService::class.simpleName.orEmpty()
     private val readAudio by lazy { repository.localDataSource.readAudio() }
     private var isLoadingDatabase = MutableStateFlow<Boolean?>(null)
 
@@ -75,7 +63,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
     /** Notification */
     @Inject
-    lateinit var notification: Notification
+    lateinit var notificationBuilder: AudioNotificationBuilder
     private lateinit var _notificationChannel: NotificationChannel
     private val notificationChannel get() = _notificationChannel
 
@@ -214,7 +202,7 @@ class MusicService : MediaBrowserServiceCompat() {
             notificationManager.createNotificationChannel(notificationChannel)
         }
 
-        startForeground(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notification)
+        startForeground(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notificationBuilder.build())
 
 //        /** 再生中以外はスワイプによる通知削除を許可 */
 //        if (controller.playbackState?.state != PlaybackStateCompat.STATE_PLAYING)
@@ -286,91 +274,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
 
     private fun notifyNotification() {
-        notificationManager.notify(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notification)
+        notificationManager.notify(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notificationBuilder.build())
     }
 
-
-//    inner class MusicSessionCallBack : MediaSessionCompat.Callback() {
-//
-//        /** TransportController#playFromMediaId　に対して呼び出される */
-//        override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-//            if (mediaId == null) {
-//                return
-//            } else {
-//                val readAudioEntity: Flow<AudioEntity> =
-//                    repository.localDataSource.readAudioFromId(mediaId.toInt())
-//                CoroutineScope(serviceContext).launch {
-//                    readAudioEntity.first { audioEntity ->
-//                        if (audioEntity != null) {
-//                            withContext(Dispatchers.Main) {
-//                                simpleExoPlayer.setMediaItem(MediaItem.fromUri(audioEntity.audioUri))
-//                                simpleExoPlayer.prepare()
-//                                mediaSession.isActive = true
-//                                onPlay()
-//                            }
-//                            /** 再生中の曲情報(MediaSessionが配信している曲)を設定 */
-//                            mediaSession.setMetadata(audioMediaMetaData[mediaId])
-//                        }
-//                        return@first true
-//                    }
-//                }
-//            }
-//        }
-//
-//        /** MediaController#play　に対して呼び出される */
-//        override fun onPlay() {
-//            val audioFocusRequestResult =
-//                AudioManagerCompat
-//                    .requestAudioFocus(audioManager, audioFocusRequest)
-//
-//            /** Audio focusを要求 */
-//            if (audioFocusRequestResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-//                /** focus要求が許可されたら再生を開始 */
-//                mediaSession.isActive = true
-//                simpleExoPlayer.playWhenReady = true
-//            }
-//        }
-//
-//        override fun onPause() {
-//            simpleExoPlayer.playWhenReady = false
-//            /** オーディオフォーカスを開放する　*/
-//            AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusRequest)
-//        }
-//
-//        override fun onStop() {
-//            onPause()
-//            mediaSession.isActive = false
-//            /** オーディオフォーカスを開放する　*/
-//            AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusRequest)
-//        }
-//
-//        override fun onSeekTo(pos: Long) {
-//            simpleExoPlayer.seekTo(pos)
-//        }
-//
-//        override fun onSkipToNext() {
-//            index++
-//            /** ライブラリの最後まで再生されてる場合は0に戻す */
-//            if (index >= queueItems.size) index = 0
-//
-//            onPlayFromMediaId(queueItems[index].description.mediaId, null)
-//        }
-//
-//        override fun onSkipToPrevious() {
-//            index--
-//            /** インデックスがマイナスの場合は、最後の曲を再生する*/
-//            if (index < 0) index = queueItems.size - 1
-//
-//            onPlayFromMediaId(queueItems[index].description.mediaId, null)
-//        }
-//
-//        /** WearやAutoでキュー内のアイテムを選択された際にも呼び出される */
-//        override fun onSkipToQueueItem(id: Long) {
-//            onPlayFromMediaId(queueItems[id.toInt()].description.mediaId, null)
-//        }
-//
-//        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
-//            return super.onMediaButtonEvent(mediaButtonEvent)
-//        }
-//    }
 }

@@ -16,10 +16,10 @@ import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.util.Constants
 import javax.inject.Inject
 
-class AudioNotification @Inject constructor(
+class AudioNotificationBuilder @Inject constructor(
     @ApplicationContext private val context: Context,
     private val mediaSession: MediaSessionCompat,
-) : Notification() {
+) {
 
     /** 現在再生している曲のMediaMetadataを取得　*/
     private val controller = mediaSession.controller
@@ -64,12 +64,12 @@ class AudioNotification @Inject constructor(
         return@run this
     }
 
-    private val notificationBuilder =
+    fun build(): Notification =
         NotificationCompat.Builder(
             context,
             Constants.NOTIFICATION_CHANNEL_ID_PLAYBACK
         )
-            .apply {
+            .run {
 //                  setContentText(description.subtitle)
 //                  setSubText(description.description)
 //                  setLargeIcon(description.iconBitmap)
@@ -92,38 +92,35 @@ class AudioNotification @Inject constructor(
                 setNotificationSilent()
 
                 setSmallIcon(R.drawable.ic_launcher_foreground)
-            }
+                setContentTitle(description?.title)
 
-    fun createNotification(): Notification =
-        notificationBuilder.run {
-            setContentTitle(description?.title)
-            /** 通知バーにアクションを設定*/
-            if (controller.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) {
+                /** 通知バーにアクションを設定*/
+                if (controller.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) {
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_pause, "pause",
+                            pendingIntentPause
+                        )
+                    )
+                } else {
+                    addAction(
+                        NotificationCompat.Action(
+                            R.drawable.exo_controls_play, "play",
+                            pendingIntentPlay
+                        )
+                    )
+                }.build()
                 addAction(
                     NotificationCompat.Action(
-                        R.drawable.exo_controls_pause, "pause",
-                        pendingIntentPause
+                        R.drawable.exo_controls_previous,
+                        "prev", pendingIntentPrev
                     )
                 )
-            } else {
                 addAction(
                     NotificationCompat.Action(
-                        R.drawable.exo_controls_play, "play",
-                        pendingIntentPlay
+                        R.drawable.exo_controls_next, "next",
+                        pendingIntentNext
                     )
-                )
+                ).build()
             }
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.exo_controls_previous,
-                    "prev", pendingIntentPrev
-                )
-            )
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.exo_controls_next, "next",
-                    pendingIntentNext
-                )
-            ).build()
-        }
 }

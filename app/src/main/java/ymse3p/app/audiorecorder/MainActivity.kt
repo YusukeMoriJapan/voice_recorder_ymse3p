@@ -21,7 +21,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
-import ymse3p.app.audiorecorder.services.MusicService
+import ymse3p.app.audiorecorder.services.AudioService
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         MediaBrowserCompat(
-            this, ComponentName(this, MusicService::class.java),
+            this, ComponentName(this, AudioService::class.java),
             connectionCallback, null
         )
     }
@@ -91,9 +91,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, MusicService::class.java))
+            startForegroundService(Intent(this, AudioService::class.java))
         } else {
-            startService(Intent(this, MusicService::class.java))
+            startService(Intent(this, AudioService::class.java))
         }
 
         mediaBrowser.connect()
@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         mediaBrowser.disconnect()
         if (mediaController.playbackState.state != PlaybackStateCompat.STATE_PLAYING)
-            stopService(Intent(this, MusicService::class.java))
+            stopService(Intent(this, AudioService::class.java))
     }
 
     private fun play(id: String) {

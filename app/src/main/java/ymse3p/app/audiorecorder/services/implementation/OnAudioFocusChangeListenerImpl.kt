@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.services
+package ymse3p.app.audiorecorder.services.implementation
 
 import android.media.AudioManager
 import android.support.v4.media.session.MediaSessionCompat
