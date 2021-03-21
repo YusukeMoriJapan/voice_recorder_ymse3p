@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.di
+package ymse3p.app.audiorecorder.di.playbackmodule
 
 import android.content.Context
 import com.google.android.exoplayer2.DefaultLoadControl
@@ -13,7 +13,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object PlaybackModule {
+object SingletonPlaybackModule {
 
     @Singleton
     @Provides
