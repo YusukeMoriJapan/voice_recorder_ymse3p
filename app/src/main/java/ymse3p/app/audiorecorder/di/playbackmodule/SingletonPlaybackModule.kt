@@ -15,19 +15,5 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object SingletonPlaybackModule {
 
-    @Singleton
-    @Provides
-    fun provideExoPlayer(
-        @ApplicationContext context: Context,
-    ): SimpleExoPlayer {
 
-        val trackSelector = DefaultTrackSelector(context)
-        val loadControl = DefaultLoadControl()
-
-        return SimpleExoPlayer.Builder(context).run {
-            setTrackSelector(trackSelector)
-            setLoadControl(loadControl)
-            build()
-        }
-    }
 }

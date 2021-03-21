@@ -35,10 +35,12 @@
             layout="@layout/content_main"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/player_control_view"
+            app:layout_constraintBottom_toTopOf="@+id/linearLayoutBottom"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+            app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+            app:layout_constraintVertical_bias="0.0" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/mic"
@@ -47,30 +49,102 @@
             android:layout_margin="@dimen/fab_margin"
             android:backgroundTint="#FF0000"
             app:backgroundTint="#FF0000"
-            app:layout_constraintBottom_toTopOf="@+id/player_control_view"
+            app:layout_constraintBottom_toTopOf="@+id/linearLayoutBottom"
             app:layout_constraintEnd_toEndOf="parent"
             app:srcCompat="@drawable/ic_baseline_mic_24"
             app:tint="#FFFFFF" />
 
-        <com.google.android.exoplayer2.ui.PlayerControlView
-            android:id="@+id/player_control_view"
-            android:layout_width="0dp"
+        <View
+            android:id="@+id/plaback_shadow"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="@drawable/playback_shadow"
+            app:layout_constraintBottom_toBottomOf="@+id/include" />
+
+        <LinearLayout
+            android:id="@+id/linearLayoutBottom"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:elevation="8dp"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:show_timeout="0"/>
+            app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:id="@+id/audio_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:text="オーディオタイトル"
-            android:textSize="18sp"
-            app:layout_constraintBottom_toTopOf="@+id/player_control_view"
-            app:layout_constraintStart_toStartOf="@+id/include" />
+            <TextView
+                android:id="@+id/textView_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                tools:text="audio title" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingBottom="5dp">
+
+                <TextView
+                    android:id="@+id/textView_position"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00" />
+
+                <TextView
+                    android:id="@+id/textView_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:text="00:00" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="3dp">
+
+                <ImageButton
+                    android:id="@+id/button_prev"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_margin="10dp"
+                    android:background="#00FFFFFF"
+                    app:srcCompat="@drawable/ic_baseline_skip_previous_24" />
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/button_play"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="10dp"
+                    android:clickable="true"
+                    app:fabSize="normal"
+                    app:srcCompat="@drawable/ic_baseline_pause_24" />
+
+                <ImageButton
+                    android:id="@+id/button_next"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_margin="10dp"
+                    android:background="#00FFFFFF"
+                    app:srcCompat="@drawable/ic_baseline_skip_next_24" />
+
+            </LinearLayout>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
