@@ -25,7 +25,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext private val co
     private object PreferenceKeys {
         val recordedAudioId: Preferences.Key<Int> = intPreferencesKey(RECORDED_AUDIO_ID)
     }
-
     suspend fun incrementRecordedAudioId() {
         context.dataStore.edit { preferences ->
             val currentNumber = preferences[PreferenceKeys.recordedAudioId]?.plus(1) ?: 0
