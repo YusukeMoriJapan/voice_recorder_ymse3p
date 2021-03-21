@@ -17,7 +17,6 @@ class AudioMediaControllerCallback @Inject constructor(
     }
 
     override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-//                notifyNotification()
         notificationManager.notify(
             Constants.FOREGROUND_NOTIFICATION_ID_PLAYBACK,
             notificationBuilder.build()
