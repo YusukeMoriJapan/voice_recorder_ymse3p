@@ -18,8 +18,8 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
-import com.google.android.exoplayer2.SimpleExoPlayer
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
 import ymse3p.app.audiorecorder.services.AudioService
@@ -28,7 +28,8 @@ import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -37,45 +38,19 @@ class MainActivity : AppCompatActivity() {
     private val binding get() = _binding
     private val mainViewModel by lazy { ViewModelProvider(this).get(MainViewModel::class.java) }
 
+    /** Playback components */
     private val mediaBrowser: MediaBrowserCompat by lazy {
-
-        val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
-            override fun onChildrenLoaded(
-                parentId: String,
-                children: MutableList<MediaBrowserCompat.MediaItem>
-            ) {
-                if (mediaController.playbackState == null)
-                    children[0].mediaId?.let { play(it) }
-            }
-        }
-
-        val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
-            override fun onConnected() {
-                try {
-                    if (mediaController.playbackState != null && mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
-                        controllerCallback.onMetadataChanged(mediaController.metadata)
-                        controllerCallback.onPlaybackStateChanged(mediaController.playbackState)
-                    }
-
-                } catch (e: RemoteException) {
-                    e.printStackTrace()
-                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
-                }
-
-                mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
-            }
-        }
         MediaBrowserCompat(
             this, ComponentName(this, AudioService::class.java),
             connectionCallback, null
         )
     }
-
     private val mediaController: MediaControllerCompat by lazy {
         MediaControllerCompat(this, mediaBrowser.sessionToken)
             .apply { registerCallback(controllerCallback) }
     }
 
+    /** callbacks */
     private val controllerCallback = object : MediaControllerCompat.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
             metadata?.let { metadata ->
@@ -111,6 +86,33 @@ class MainActivity : AppCompatActivity() {
             binding.seekBar.progress = state.position.toInt()
         }
     }
+    private val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+        override fun onConnected() {
+            try {
+                if (mediaController.playbackState != null && mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
+                    controllerCallback.onMetadataChanged(mediaController.metadata)
+                    controllerCallback.onPlaybackStateChanged(mediaController.playbackState)
+                }
+
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
+            }
+
+            mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
+        }
+    }
+
+    val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
+        override fun onChildrenLoaded(
+            parentId: String,
+            children: MutableList<MediaBrowserCompat.MediaItem>
+        ) {
+            if (mediaController.playbackState == null)
+                children[0].mediaId?.let { play(it) }
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,9 +124,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         mediaBrowser.connect()
-
         mainViewModel
         _binding = ActivityMainBinding.inflate(layoutInflater)
+
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
@@ -174,8 +176,13 @@ class MainActivity : AppCompatActivity() {
                     mediaController.transportControls.seekTo(seekBar.progress.toLong())
                 }
             }
-
         })
+
+        lifecycleScope.launchWhenCreated {
+            mainViewModel.requestPlayNumber.collect {
+                play(it.toString())
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -242,4 +249,6 @@ class MainActivity : AppCompatActivity() {
             TimeUnit.MILLISECONDS.toSeconds(duration)
         return "${minutes}:${seconds}"
     }
+
+
 }

@@ -11,6 +11,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -41,6 +42,8 @@ class MainViewModel @Inject constructor(
 
     private val readRecordedAudioId = dataStoreRepository.readRecordedAudioId
     private var currentOutputFileName: File? = null
+
+    val requestPlayNumber = MutableSharedFlow<Int>()
 
     suspend fun startRecording() {
         try {
