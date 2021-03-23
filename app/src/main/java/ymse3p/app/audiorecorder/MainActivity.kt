@@ -1,54 +1,130 @@
 package ymse3p.app.audiorecorder
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.RemoteException
+import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.SeekBar
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
+import ymse3p.app.audiorecorder.services.AudioService
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
-import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var _binding: ActivityMainBinding
     private val binding get() = _binding
-    private val mainViewModel by viewModels<MainViewModel>()
-    private val playbackViewModel by viewModels<PlayBackViewModel>()
+    private val mainViewModel by lazy { ViewModelProvider(this).get(MainViewModel::class.java) }
 
+    /** Playback components */
+    private val mediaBrowser: MediaBrowserCompat by lazy {
+        MediaBrowserCompat(
+            this, ComponentName(this, AudioService::class.java),
+            connectionCallback, null
+        )
+    }
+    private val mediaController: MediaControllerCompat by lazy {
+        MediaControllerCompat(this, mediaBrowser.sessionToken)
+            .apply { registerCallback(controllerCallback) }
+    }
+
+    /** callbacks */
+    private val controllerCallback = object : MediaControllerCompat.Callback() {
+        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+            metadata?.let { metadata ->
+                binding.textViewTitle.text = metadata.description.title
+                binding.textViewDuration.text = milliSecToTimeString(
+                    metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                )
+                binding.seekBar.max =
+                    metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION).toInt()
+            }
+        }
+
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            if (state == null) return
+
+            if (state.state == PlaybackStateCompat.STATE_PLAYING) {
+                binding.buttonPlay.apply {
+                    setOnClickListener {
+                        mediaController.transportControls.pause()
+                    }
+                    setImageResource(R.drawable.ic_baseline_pause_24)
+                }
+            } else {
+                binding.buttonPlay.apply {
+                    setOnClickListener {
+                        mediaController.transportControls.play()
+                    }
+                    setImageResource(R.drawable.ic_baseline_play_arrow_24)
+                }
+            }
+
+            binding.textViewPosition.text = milliSecToTimeString(state.position)
+            binding.seekBar.progress = state.position.toInt()
+        }
+    }
+    private val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+        override fun onConnected() {
+            try {
+                if (mediaController.playbackState != null && mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
+                    controllerCallback.onMetadataChanged(mediaController.metadata)
+                    controllerCallback.onPlaybackStateChanged(mediaController.playbackState)
+                }
+
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
+            }
+
+            mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
+        }
+    }
+
+    val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
+        override fun onChildrenLoaded(
+            parentId: String,
+            children: MutableList<MediaBrowserCompat.MediaItem>
+        ) {
+            if (mediaController.playbackState == null)
+                children[0].mediaId?.let { play(it) }
+        }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launchWhenCreated {
-            playbackViewModel.metadata.collect { metadata ->
-                changeMetadata(metadata)
-            }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(Intent(this, AudioService::class.java))
+        } else {
+            startService(Intent(this, AudioService::class.java))
         }
 
-        lifecycleScope.launchWhenCreated {
-            playbackViewModel.state.collect { state ->
-                changePlaybackState(state)
-            }
-        }
-
+        mediaBrowser.connect()
+        mainViewModel
         _binding = ActivityMainBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
@@ -83,10 +159,10 @@ class MainActivity : AppCompatActivity() {
 
         /** 再生用UIの設定 */
         binding.buttonPrev.setOnClickListener {
-            playbackViewModel.skipToPrev()
+            mediaController.transportControls.skipToPrevious()
         }
         binding.buttonNext.setOnClickListener {
-            playbackViewModel.skipToNext()
+            mediaController.transportControls.skipToNext()
         }
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -96,19 +172,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                seekBar?.let {
-                    playbackViewModel.seekTo(it.progress.toLong())
+                seekBar?.let { seekBar ->
+                    mediaController.transportControls.seekTo(seekBar.progress.toLong())
                 }
             }
         })
 
-    }
-
-    override fun onStart() {
-        super.onStart()
-        lifecycleScope.launchWhenStarted {
-            changeMetadata(playbackViewModel.getMetadata())
-            changePlaybackState(playbackViewModel.getPlaybackState())
+        lifecycleScope.launchWhenCreated {
+            mainViewModel.requestPlayNumber.collect {
+                play(it.toString())
+            }
         }
     }
 
@@ -156,41 +229,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeMetadata(metadata: MediaMetadataCompat?) {
-        metadata?.let {
-            binding.textViewTitle.text = metadata.description.title
-            binding.textViewDuration.text = milliSecToTimeString(
-                it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
-            )
-            binding.seekBar.max =
-                it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION).toInt()
-        }
-    }
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaBrowser.disconnect()
+        if (mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
+        else stopService(Intent(this, AudioService::class.java))
 
-    private fun changePlaybackState(state: PlaybackStateCompat?) {
-        if (state !== null) {
-            if (state.state == PlaybackStateCompat.STATE_PLAYING) {
-                binding.buttonPlay.apply {
-                    setOnClickListener {
-                        playbackViewModel.pause()
-                    }
-                    setImageResource(R.drawable.ic_baseline_pause_24)
-                }
-            } else {
-                binding.buttonPlay.apply {
-                    setOnClickListener {
-                        playbackViewModel.play()
-                    }
-                    setImageResource(R.drawable.ic_baseline_play_arrow_24)
-                }
-            }
-
-            binding.textViewPosition.text = milliSecToTimeString(state.position)
-            binding.seekBar.progress = state.position.toInt()
-        }
 
     }
 
+    private fun play(id: String) {
+        mediaController.transportControls.playFromMediaId(id, null)
+    }
 
     private fun milliSecToTimeString(duration: Long): String {
         val minutes =

@@ -168,7 +168,7 @@ class AudioService : MediaBrowserServiceCompat() {
             if (isLoadingDatabase.value == false) {
                 convertMetadataToMediaItem()
             } else {
-                CoroutineScope(serviceContext).launch {
+                runBlocking {
                     isLoadingDatabase.first {
                         if (it == false) {
                             convertMetadataToMediaItem()
@@ -184,7 +184,6 @@ class AudioService : MediaBrowserServiceCompat() {
 //            result.sendError(null)
             result.sendResult(mutableListOf())
         }
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
