@@ -15,12 +15,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
-import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -30,12 +29,11 @@ import kotlin.coroutines.suspendCoroutine
 class FirstFragment : Fragment() {
 
     private val mainViewModel by activityViewModels<MainViewModel>()
-    private val playBackViewModel by activityViewModels<PlayBackViewModel>()
 
     private lateinit var _binding: FragmentFirstBinding
     private val binding get() = _binding
 
-    private val mAdapter by lazy { AudioAdapter(playBackViewModel) }
+    private val mAdapter by lazy { AudioAdapter(mainViewModel) }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,7 +42,6 @@ class FirstFragment : Fragment() {
         _binding = FragmentFirstBinding.inflate(layoutInflater, container, false)
         setupRecyclerView()
         readDatabase()
-
         return binding.root
     }
 
@@ -54,7 +51,6 @@ class FirstFragment : Fragment() {
         view.findViewById<Button>(R.id.button_first).setOnClickListener {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
-
     }
 
     private fun setupRecyclerView() {
