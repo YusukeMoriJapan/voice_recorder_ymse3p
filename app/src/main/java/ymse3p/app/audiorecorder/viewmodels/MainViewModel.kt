@@ -43,8 +43,6 @@ class MainViewModel @Inject constructor(
     private val readRecordedAudioId = dataStoreRepository.readRecordedAudioId
     private var currentOutputFileName: File? = null
 
-    val requestPlayNumber = MutableSharedFlow<Int>()
-
     suspend fun startRecording() {
         try {
             audioRecorder.apply {
