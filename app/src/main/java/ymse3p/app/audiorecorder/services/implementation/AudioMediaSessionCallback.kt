@@ -24,17 +24,44 @@ class AudioMediaSessionCallback @Inject constructor(
     private val mediaSession: MediaSessionCompat,
     private val audioManager: AudioManager,
     private val audioFocusRequest: AudioFocusRequestCompat,
-    private val audioMediaMetaData: MutableMap<String, MediaMetadataCompat>,
+    private val audioMediaMetaData: MutableMap<Int, MediaMetadataCompat>,
     private val queueItems: MutableList<MediaSessionCompat.QueueItem>,
-    private val playbackQueueIndex: ServicePlaybackProvidesModule.PlaybackQueueIndex,
+    private var playbackQueueIndex: ServicePlaybackProvidesModule.PlaybackQueueIndex,
     @ServiceContext private val serviceContext: Job
 ) : MediaSessionCompat.Callback() {
 
     /** TransportController#playFromMediaId　に対して呼び出される */
-    override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-        if (mediaId == null) {
+    override fun onPlayFromMediaId(id: String?, extras: Bundle?) {
+        if (id == null) {
             return
         } else {
+            val readAudioEntity: Flow<AudioEntity> =
+                repository.localDataSource.readAudioFromId(id.toInt())
+            CoroutineScope(serviceContext).launch {
+                readAudioEntity.first { audioEntity ->
+                    if (audioEntity != null) {
+                        withContext(Dispatchers.Main) {
+                            simpleExoPlayer.setMediaItem(MediaItem.fromUri(audioEntity.audioUri))
+                            simpleExoPlayer.prepare()
+                            mediaSession.isActive = true
+                            onPlay()
+                        }
+                        /** 再生中の曲情報(MediaSessionが配信している曲)を設定 */
+                        mediaSession.setMetadata(audioMediaMetaData[id.toInt()])
+                    }
+                    return@first true
+                }
+            }
+        }
+    }
+
+    /** WearやAutoでキュー内のアイテムを選択された際にも呼び出される */
+    override fun onSkipToQueueItem(queue: Long) {
+        if (queue == null) {
+            return
+        } else {
+            val mediaId: String = queueItems[queue.toInt()].description.mediaId
+                ?: return
             val readAudioEntity: Flow<AudioEntity> =
                 repository.localDataSource.readAudioFromId(mediaId.toInt())
             CoroutineScope(serviceContext).launch {
@@ -47,7 +74,8 @@ class AudioMediaSessionCallback @Inject constructor(
                             onPlay()
                         }
                         /** 再生中の曲情報(MediaSessionが配信している曲)を設定 */
-                        mediaSession.setMetadata(audioMediaMetaData[mediaId])
+                        mediaSession.setMetadata(audioMediaMetaData[mediaId.toInt()])
+                        playbackQueueIndex.i = queue.toInt()
                     }
                     return@first true
                 }
@@ -90,22 +118,16 @@ class AudioMediaSessionCallback @Inject constructor(
         playbackQueueIndex.i++
         /** ライブラリの最後まで再生されてる場合は0に戻す */
         if (playbackQueueIndex.i >= queueItems.size) playbackQueueIndex.i = 0
-
-        onPlayFromMediaId(queueItems[playbackQueueIndex.i].description.mediaId, null)
+        onSkipToQueueItem(playbackQueueIndex.i.toLong())
     }
 
     override fun onSkipToPrevious() {
         playbackQueueIndex.i--
         /** インデックスがマイナスの場合は、最後の曲を再生する*/
         if (playbackQueueIndex.i < 0) playbackQueueIndex.i = queueItems.size - 1
-
-        onPlayFromMediaId(queueItems[playbackQueueIndex.i].description.mediaId, null)
+        onSkipToQueueItem(playbackQueueIndex.i.toLong())
     }
 
-    /** WearやAutoでキュー内のアイテムを選択された際にも呼び出される */
-    override fun onSkipToQueueItem(id: Long) {
-        onPlayFromMediaId(queueItems[id.toInt()].description.mediaId, null)
-    }
 
     override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
         return super.onMediaButtonEvent(mediaButtonEvent)

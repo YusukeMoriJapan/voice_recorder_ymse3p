@@ -25,7 +25,7 @@ class PlayBackViewModel @Inject constructor(
         get() = viewModelScope.coroutineContext
 
     private val context get() = getApplication<Application>().applicationContext
-    val requestPlayNumber = MutableSharedFlow<Int>()
+    val requestPlayQueue = MutableSharedFlow<Int>()
 
     private val isConnectedController = MutableStateFlow(false)
 
@@ -72,7 +72,7 @@ class PlayBackViewModel @Inject constructor(
             children: MutableList<MediaBrowserCompat.MediaItem>
         ) {
             launch {
-                if (getController().playbackState == null)
+                if (getController().playbackState == null && children.isNotEmpty())
                     children[0].mediaId?.let { playFromMediaId(it) }
             }
         }
@@ -96,8 +96,8 @@ class PlayBackViewModel @Inject constructor(
         }
 
         launch(Dispatchers.Default) {
-            requestPlayNumber.collect {
-                playFromMediaId(it.toString())
+            requestPlayQueue.collect {
+                skipToQueueItem(it.toLong())
             }
         }
 
@@ -105,6 +105,11 @@ class PlayBackViewModel @Inject constructor(
 
     fun playFromMediaId(id: String) {
         launch { getController().transportControls.playFromMediaId(id, null) }
+    }
+
+
+    fun skipToQueueItem(queue: Long) {
+        launch { getController().transportControls.skipToQueueItem(queue) }
     }
 
     fun play() {

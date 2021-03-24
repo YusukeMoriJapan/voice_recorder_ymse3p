@@ -26,6 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
+                android:visibility="gone"
                 app:popupTheme="@style/Theme.AudioRecorder.PopupOverlay" />
 
         </com.google.android.material.appbar.AppBarLayout>

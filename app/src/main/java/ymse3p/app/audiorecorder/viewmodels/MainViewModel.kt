@@ -52,7 +52,7 @@ class MainViewModel @Inject constructor(
                 this@MainViewModel.readRecordedAudioId.first { audioId ->
                     currentOutputFileName = File(
                         getApplication<Application>().filesDir,
-                        audioId.toString(16) + " default_name.mp4"
+                        audioId.toString(16) + "_recorded_audio.mp4"
                     )
                     setOutputFile(currentOutputFileName.toString())
                     Log.d("AudioNumber", audioId.toString(16))
@@ -132,12 +132,12 @@ class MainViewModel @Inject constructor(
         currentOutputFileName = null
     }
 
-    private fun deleteAudio(audioEntity: AudioEntity) =
+    fun deleteAudio(audioEntity: AudioEntity) =
         viewModelScope.launch(Dispatchers.IO) {
             repository.localDataSource.deleteAudio(audioEntity)
         }
 
-    private fun deleteAllAudio() =
+    fun deleteAllAudio() =
         viewModelScope.launch(Dispatchers.IO) {
             repository.localDataSource.deleteAllAudio()
         }

@@ -1,29 +1,20 @@
 package ymse3p.app.audiorecorder
 
 import android.os.Bundle
-import android.support.v4.media.session.MediaControllerCompat
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.MediaController
-import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
-import javax.inject.Inject
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+
 
 
 @AndroidEntryPoint
@@ -35,7 +26,7 @@ class FirstFragment : Fragment() {
     private lateinit var _binding: FragmentFirstBinding
     private val binding get() = _binding
 
-    private val mAdapter by lazy { AudioAdapter(playBackViewModel) }
+    private val mAdapter by lazy { AudioAdapter(mainViewModel,playBackViewModel,requireActivity()) }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -55,6 +46,11 @@ class FirstFragment : Fragment() {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
 
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mAdapter.clearContextualActionMode()
     }
 
     private fun setupRecyclerView() {

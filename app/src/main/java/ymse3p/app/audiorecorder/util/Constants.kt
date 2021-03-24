@@ -21,5 +21,8 @@ class Constants {
 
         //Foreground notification ID
         const val FOREGROUND_NOTIFICATION_ID_PLAYBACK = 1
+
+        //
+        const val MEDIA_METADATA_QUEUE = "media_metadata_queue"
     }
 }

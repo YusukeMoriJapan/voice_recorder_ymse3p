@@ -100,7 +100,7 @@ object ServicePlaybackProvidesModule {
     @ServiceScoped
     @Provides
     fun provideAudioMediaMetaData()
-            : MutableMap<String, MediaMetadataCompat> = mutableMapOf()
+            : MutableMap<Int, MediaMetadataCompat> = mutableMapOf()
 
 
     @ServiceScoped
