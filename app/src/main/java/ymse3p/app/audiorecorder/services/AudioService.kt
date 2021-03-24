@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.*
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.di.playbackmodule.ServiceContext
 import ymse3p.app.audiorecorder.util.Constants.Companion.FOREGROUND_NOTIFICATION_ID_PLAYBACK
+import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.audiorecorder.util.Constants.Companion.NOTIFICATION_CHANNEL_ID_PLAYBACK
 import javax.inject.Inject
 
@@ -44,7 +45,7 @@ class AudioService : MediaBrowserServiceCompat() {
     lateinit var queueItems: MutableList<MediaSessionCompat.QueueItem>
 
     @Inject
-    lateinit var audioMediaMetaData: MutableMap<String, MediaMetadataCompat>
+    lateinit var audioMediaMetaData: MutableMap<Int, MediaMetadataCompat>
 
     @ServiceContext
     @Inject
@@ -92,9 +93,14 @@ class AudioService : MediaBrowserServiceCompat() {
         CoroutineScope(serviceContext).launch {
             readAudio.collect { audioEntityList ->
                 isLoadingDatabase.value = true
-                audioEntityList.forEach { audioEntity ->
+                audioMediaMetaData.clear()
+                audioEntityList.forEachIndexed { index, audioEntity ->
                     val mediaMetaData =
                         MediaMetadataCompat.Builder()
+                            .putLong(
+                                MEDIA_METADATA_QUEUE,
+                                index.toLong()
+                            )
                             .putString(
                                 MediaMetadataCompat.METADATA_KEY_MEDIA_ID,
                                 audioEntity.id.toString()
@@ -108,14 +114,15 @@ class AudioService : MediaBrowserServiceCompat() {
                                 audioEntity.audioDuration.toLong()
                             )
                             .build()
-                    audioMediaMetaData[audioEntity.id.toString()] = mediaMetaData
+                    audioMediaMetaData[audioEntity.id] = mediaMetaData
                 }
 
+                queueItems.clear()
                 audioMediaMetaData.forEach { mediaMetaData ->
                     queueItems.add(
                         MediaSessionCompat.QueueItem(
                             mediaMetaData.value.description,
-                            mediaMetaData.key.toLong()
+                            mediaMetaData.value.getLong(MEDIA_METADATA_QUEUE)
                         )
                     )
                 }
