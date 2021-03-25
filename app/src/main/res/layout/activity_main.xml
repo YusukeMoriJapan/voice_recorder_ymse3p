@@ -66,7 +66,7 @@
             android:id="@+id/linearLayoutBottom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFFFFF"
+            android:background="@color/playbackUiColor"
             android:elevation="8dp"
             android:orientation="vertical"
             android:paddingStart="10dp"

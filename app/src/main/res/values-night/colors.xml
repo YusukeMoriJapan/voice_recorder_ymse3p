@@ -10,10 +10,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="moreDarker">#0d0d0d</color>
-    <color name="darkGray">#4B4B4B</color>
     <color name="dark">#313C44</color>
     <color name="darker">#151B20</color>
     <color name="lightMediumGray">#80D1D1D1</color>
+    <color name="darkGray">#4B4B4B</color>
     <color name="mediumGray">#D1D1D1</color>
     <color name="lightGray">#F9F9F9</color>
     <color name="white">#FFFFFFFF</color>
@@ -21,6 +21,10 @@
     <color name="taikoh">#f8c3cd</color>
     <color name="taikoh_light">#fff6ff</color>
     <color name="taikoh_dark">#c5929c</color>
+
+    <color name="kihada">#f6c555</color>
+    <color name="kihada_light">#fff885</color>
+    <color name="kihada_dark">#c09523</color>
 
     <color name="karakurenai">#d0104c</color>
     <color name="karakurenai_light">#ff5677</color>
@@ -30,29 +34,29 @@
     <color name="nakabeni_light">#ff7f9b</color>
     <color name="nakabeni_dark">#a51042</color>
 
-
-    <color name="kihada">#f6c555</color>
-    <color name="kihada_light">#fff885</color>
-    <color name="kihada_dark">#c09523</color>
-
     <color name="transparent">#00000000</color>
 
-    <color name="backgroundColor">@color/lightGray</color>
-    <color name="placeholderColor">@color/mediumGray</color>
+    <!-- DARK THEME -->
+    <color name="backgroundColor">@color/dark</color>
+    <color name="placeholderColor">@color/darker</color>
 
     // Custom CardView Style
-    <color name="strokeColor">@color/lightMediumGray</color>
-    <color name="cardBackgroundColor">@color/white</color>
-    <color name="titleColor">@color/darker</color>
-    <color name="descriptionColor">@color/darkGray</color>
+    <color name="strokeColor">@color/darkGray</color>
+    <color name="cardBackgroundColor">@color/darker</color>
+    <color name="titleColor">@color/mediumGray</color>
+    <color name="descriptionColor">@color/mediumGray</color>
 
-    <color name="statusBarColor">@color/colorPrimaryDark</color>
-    <color name="contextualStatusBarColor">@color/darker</color>
+
+    <color name="statusBarColor">@color/black</color>
+    <color name="contextualStatusBarColor">@color/black</color>
+<!--    <color name="contextualActionBarColor">@color/darker</color>-->
+<!--    <color name="actionBarBackgroundColor">@color/darker</color>-->
 
     //playback UI
-    <color name="playbackUiColor">@color/white</color>
+    <color name="playbackUiColor">@color/darker</color>
 
     //bottom Sheet
-    <color name="bottomSheetTextHintColor">@color/karakurenai_light</color>
+    <color name="bottomSheetTextHintColor">@color/taikoh</color>
+
 
 </resources>

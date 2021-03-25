@@ -10,6 +10,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/cardBackgroundColor"
         tools:context=".AudioSaveBottomSheet">
 
         <Button
@@ -25,21 +26,22 @@
             app:layout_constraintTop_toBottomOf="@+id/text_input_audio_title" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:hint="タイトルを入力してください"
+            app:hintTextColor="@color/bottomSheetTextHintColor"
             android:id="@+id/text_input_audio_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="24dp"
             android:layout_marginEnd="24dp"
+            app:errorEnabled="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:errorEnabled="true">
+            app:layout_constraintTop_toTopOf="parent">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="タイトルを入力してください"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 

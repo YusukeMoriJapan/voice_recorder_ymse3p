@@ -27,8 +27,9 @@ class PlayBackViewModel @Inject constructor(
     private val context get() = getApplication<Application>().applicationContext
     val requestPlayQueue = MutableSharedFlow<Int>()
 
-    private val isConnectedController = MutableStateFlow(false)
 
+    /** 再生状態の保持 */
+    private val isConnectedController = MutableStateFlow(false)
     private val isInitializedController: Deferred<Boolean> =
         async {
             isConnectedController.first {
@@ -44,21 +45,6 @@ class PlayBackViewModel @Inject constructor(
             return@async true
         }
 
-    private val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
-        override fun onConnected() {
-            isConnectedController.value = true
-            mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
-        }
-    }
-
-    private val mediaBrowser: MediaBrowserCompat = MediaBrowserCompat(
-        context, ComponentName(context, AudioService::class.java),
-        connectionCallback, null
-    ).apply { connect() }
-
-
-    private lateinit var mediaController: MediaControllerCompat
-
     private val _metadata = MutableSharedFlow<MediaMetadataCompat?>(1)
     val metadata: SharedFlow<MediaMetadataCompat?> = _metadata
 
@@ -66,14 +52,22 @@ class PlayBackViewModel @Inject constructor(
     val state: SharedFlow<PlaybackStateCompat?> = _state
 
 
+    /** Callbacks */
+    private val connectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
+        override fun onConnected() {
+            isConnectedController.value = true
+            mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
+        }
+    }
+
     private val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(
             parentId: String,
             children: MutableList<MediaBrowserCompat.MediaItem>
         ) {
             launch {
-                if (getController().playbackState == null && children.isNotEmpty())
-                    children[0].mediaId?.let { playFromMediaId(it) }
+                if (getController().playbackState == null)
+                    children.firstOrNull()?.mediaId?.let { playFromMediaId(it) }
             }
         }
     }
@@ -88,14 +82,25 @@ class PlayBackViewModel @Inject constructor(
         }
     }
 
-    init {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(Intent(context, AudioService::class.java))
-        } else {
-            context.startService(Intent(context, AudioService::class.java))
-        }
 
-        launch(Dispatchers.Default) {
+    /** 再生に必要なコンポーネント */
+    private val mediaBrowser: MediaBrowserCompat = MediaBrowserCompat(
+        context, ComponentName(context, AudioService::class.java),
+        connectionCallback, null
+    ).apply { connect() }
+
+    private lateinit var mediaController: MediaControllerCompat
+
+
+    init {
+        /** Foreground Service の実行　*/
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+            context.startForegroundService(Intent(context, AudioService::class.java))
+        else
+            context.startService(Intent(context, AudioService::class.java))
+
+        /** ユーザーからの音源再生指示を受け取る */
+        val collectRequestQueue = launch(Dispatchers.Default) {
             requestPlayQueue.collect {
                 skipToQueueItem(it.toLong())
             }
@@ -103,10 +108,30 @@ class PlayBackViewModel @Inject constructor(
 
     }
 
+
+    /** ViewModelの状態遷移に対応した処理 */
+    override fun onCleared() {
+        super.onCleared()
+        mediaBrowser.disconnect()
+        try {
+            if (mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) return
+            else context.stopService(Intent(context, AudioService::class.java))
+        } catch (e: UninitializedPropertyAccessException) {
+            context.stopService(Intent(context, AudioService::class.java))
+        }
+
+    }
+
+
+    /** オーディオ操作(MediaControllerに対する操作) */
+    private suspend fun getController(): MediaControllerCompat {
+        isInitializedController.await()
+        return mediaController
+    }
+
     fun playFromMediaId(id: String) {
         launch { getController().transportControls.playFromMediaId(id, null) }
     }
-
 
     fun skipToQueueItem(queue: Long) {
         launch { getController().transportControls.skipToQueueItem(queue) }
@@ -118,6 +143,10 @@ class PlayBackViewModel @Inject constructor(
 
     fun pause() {
         launch { getController().transportControls.pause() }
+    }
+
+    fun stop() {
+        launch { getController().transportControls.stop() }
     }
 
     fun skipToPrev() {
@@ -133,26 +162,9 @@ class PlayBackViewModel @Inject constructor(
     }
 
     suspend fun getMetadata(): MediaMetadataCompat? = getController().metadata
-
-
     suspend fun getPlaybackState(): PlaybackStateCompat? = getController().playbackState
 
-    override fun onCleared() {
-        super.onCleared()
-        mediaBrowser.disconnect()
-        try {
-            if (mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) return
-            else context.stopService(Intent(context, AudioService::class.java))
-        } catch (e: UninitializedPropertyAccessException) {
-            context.stopService(Intent(context, AudioService::class.java))
-        }
 
-    }
-
-    private suspend fun getController(): MediaControllerCompat {
-        isInitializedController.await()
-        return mediaController
-    }
 
 
 }

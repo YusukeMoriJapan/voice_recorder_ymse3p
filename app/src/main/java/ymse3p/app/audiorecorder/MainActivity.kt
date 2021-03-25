@@ -11,6 +11,9 @@ import android.view.MenuItem
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,33 +30,36 @@ import java.util.concurrent.TimeUnit
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    /** Data Bindings */
     private lateinit var _binding: ActivityMainBinding
     private val binding get() = _binding
+
+    /** ViewModels */
     private val mainViewModel by viewModels<MainViewModel>()
     private val playbackViewModel by viewModels<PlayBackViewModel>()
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        /** UIの初期化 */
+        _binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
+
+        /** コルーチン起動 */
+        // metadataの変更を受け取る
         lifecycleScope.launchWhenCreated {
             playbackViewModel.metadata.collect { metadata ->
                 changeMetadata(metadata)
             }
         }
-
+        // playbackStateの変更を受け取る
         lifecycleScope.launchWhenCreated {
             playbackViewModel.state.collect { state ->
                 changePlaybackState(state)
             }
         }
-
-        _binding = ActivityMainBinding.inflate(layoutInflater)
-
-        setContentView(binding.root)
-        setSupportActionBar(binding.toolbar)
-
+        // 録音状態の変更を受け取る
         lifecycleScope.launchWhenCreated {
             mainViewModel.isRecording.collect { isRecording ->
                 if (isRecording) {
@@ -64,6 +70,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /** 録音用UIの設定　*/
         binding.mic.setOnClickListener {
             if (mainViewModel.isRecording.value) {
                 try {
@@ -106,6 +113,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        // onStart()時の音声再生状態を受け取る
         lifecycleScope.launchWhenStarted {
             changeMetadata(playbackViewModel.getMetadata())
             changePlaybackState(playbackViewModel.getPlaybackState())
@@ -156,6 +164,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun changeMetadata(metadata: MediaMetadataCompat?) {
         metadata?.let {
             binding.textViewTitle.text = metadata.description.title
@@ -190,7 +199,6 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-
 
     private fun milliSecToTimeString(duration: Long): String {
         val minutes =

@@ -1,6 +1,8 @@
 package ymse3p.app.audiorecorder.adapter
 
 import android.app.Application
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
@@ -9,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -20,23 +23,35 @@ import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
 import java.io.File
+import kotlin.coroutines.CoroutineContext
 
 class AudioAdapter(
     private val mainViewModel: MainViewModel,
     private val playBackViewModel: PlayBackViewModel,
     private val requireActivity: FragmentActivity
 ) : RecyclerView.Adapter<AudioAdapter.MyViewHolder>(),
-    ActionMode.Callback {
+    ActionMode.Callback, CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = playBackViewModel.viewModelScope.coroutineContext
+
 
     private var audio = emptyList<AudioEntity>()
+
+    /** 生成されたViewHolderを保持 */
     private val viewHolders = mutableListOf<MyViewHolder>()
+
+    /** Contextual Action Mode */
+    private lateinit var mActionMode: ActionMode
+    private var multiSelection = false
+    private var selectedAudioList = arrayListOf<AudioEntity>()
 
     class MyViewHolder(
         val binding: AudioRowLayoutBinding,
         private val playBackViewModel: PlayBackViewModel,
         var currentPosition: Int? = null,
-    ) :
-        RecyclerView.ViewHolder(binding.root) {
+    ) : RecyclerView.ViewHolder(binding.root) {
+
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
             binding.playFloatButton.setOnClickListener {
@@ -46,18 +61,16 @@ class AudioAdapter(
                 }
             }
 
-            if (playBackViewModel.metadata.replayCache.isNotEmpty()) {
-                val metadata = playBackViewModel.metadata.replayCache[0]
-                val playingId =
-                    metadata?.getLong(MEDIA_METADATA_QUEUE)?.toInt()
-                if (currentPosition == playingId)
-                    binding.playFloatButton.setImageResource(
-                        R.drawable.ic_baseline_pause_24
-                    )
+            val state = playBackViewModel.state.replayCache.firstOrNull()?.playbackState
+            if (state != PlaybackStateCompat.STATE_PLAYING) {
+                binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            } else {
+                val playingId = playBackViewModel.metadata.replayCache.firstOrNull()
+                    ?.getLong(MEDIA_METADATA_QUEUE)
+                if (currentPosition == playingId?.toInt())
+                    binding.playFloatButton.setImageResource(R.drawable.ic_baseline_pause_24)
                 else
-                    binding.playFloatButton.setImageResource(
-                        R.drawable.ic_baseline_play_arrow_24
-                    )
+                    binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
             }
 
             binding.audioEntity = audioEntity
@@ -86,7 +99,6 @@ class AudioAdapter(
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         val currentAudio = audio[position]
         holder.bind(currentAudio, position)
-        rootView = holder.itemView.rootView
 
         saveItemStateOnScroll(currentAudio, holder)
 
@@ -109,7 +121,6 @@ class AudioAdapter(
         }
     }
 
-
     override fun getItemCount(): Int {
         return audio.size
     }
@@ -121,41 +132,53 @@ class AudioAdapter(
         diffUtilResult.dispatchUpdatesTo(this)
     }
 
-
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-
-        playBackViewModel.viewModelScope.launch {
+        launch {
             playBackViewModel.metadata.collect { metadata ->
-                viewHolders.forEach { viewHolder ->
-                    val playingId =
-                        metadata?.getLong(MEDIA_METADATA_QUEUE)?.toInt()
-                    viewHolder.binding.run {
-                        if (viewHolder.currentPosition == playingId)
-                            playFloatButton.setImageResource(
-                                R.drawable.ic_baseline_pause_24
-                            )
-                        else
-                            playFloatButton.setImageResource(
-                                R.drawable.ic_baseline_play_arrow_24
-                            )
-                    }
-                }
+                viewHolders.forEach { viewHolder -> changePlaybackIcon(metadata, viewHolder) }
+            }
+        }
+        launch {
+            playBackViewModel.state.collect { playbackState ->
+                viewHolders.forEach { viewHolder -> changePlaybackIcon(playbackState, viewHolder) }
             }
         }
     }
 
-    /** Contextual Action Mode */
-    private lateinit var mActionMode: ActionMode
-    private var multiSelection = false
-    private var selectedAudioList = arrayListOf<AudioEntity>()
-    private lateinit var rootView: View
+    private fun changePlaybackIcon(metadata: MediaMetadataCompat?, viewHolder: MyViewHolder) {
+        val playingId = metadata?.getLong(MEDIA_METADATA_QUEUE)?.toInt()
+        viewHolder.binding.run {
+            if (viewHolder.currentPosition == playingId)
+                playFloatButton.setImageResource(R.drawable.ic_baseline_pause_24)
+            else
+                playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+        }
+    }
 
+    private fun changePlaybackIcon(playbackState: PlaybackStateCompat?, viewHolder: MyViewHolder) {
+        viewHolder.binding.run {
+            if (playbackState?.state != PlaybackStateCompat.STATE_PLAYING) {
+                playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            } else {
+                val playingId =
+                    playBackViewModel.metadata.replayCache.firstOrNull()
+                        ?.getLong(MEDIA_METADATA_QUEUE)
+                if (viewHolder.currentPosition == playingId?.toInt())
+                    playFloatButton.setImageResource(R.drawable.ic_baseline_pause_24)
+                else
+                    playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            }
+        }
+    }
+
+
+    /** Contextual Action Mode */
     private fun saveItemStateOnScroll(currentAudio: AudioEntity, holder: MyViewHolder) {
         if (selectedAudioList.contains(currentAudio)) {
-            changeAudioRowStyle(holder, R.color.cardBackgroundLightColor, R.color.colorPrimary)
+            changeAudioRowStyle(holder, R.color.transparent, R.color.colorPrimary)
         } else {
-            changeAudioRowStyle(holder, R.color.cardBackgroundColor, R.color.strokeColor)
+            changeAudioRowStyle(holder, R.color.transparent, R.color.strokeColor)
         }
     }
 
@@ -175,25 +198,33 @@ class AudioAdapter(
 
     override fun onActionItemClicked(actionMode: ActionMode?, menu: MenuItem?): Boolean {
         if (menu?.itemId == R.id.delete_audio_menu) {
+            val currentPlayId =
+                playBackViewModel.metadata.replayCache.firstOrNull()?.description?.mediaId?.toInt()
+            val selectedAudioIdList =
+                List(selectedAudioList.size) { i -> selectedAudioList[i].id }
+            if (selectedAudioIdList.contains(currentPlayId))
+                playBackViewModel.stop()
+
             selectedAudioList.forEach { audioEntity ->
-                File(
-                    mainViewModel.getApplication<Application>().filesDir,
-                    audioEntity.audioUri.lastPathSegment
-                ).delete()
+                val deleteFilePath = audioEntity.audioUri.lastPathSegment
+                if (deleteFilePath !== null)
+                    File(
+                        mainViewModel.getApplication<Application>().filesDir,
+                        deleteFilePath
+                    ).delete()
                 mainViewModel.deleteAudio(audioEntity)
             }
-            showSnackBar("${selectedAudioList.size}個削除されました")
-
-            multiSelection = false
-            selectedAudioList.clear()
-            actionMode?.finish()
         }
+        showSnackBar("${selectedAudioList.size}個削除されました")
+        multiSelection = false
+        selectedAudioList.clear()
+        actionMode?.finish()
         return true
     }
 
     override fun onDestroyActionMode(actionMode: ActionMode?) {
         viewHolders.forEach { holder ->
-            changeAudioRowStyle(holder, R.color.cardBackgroundColor, R.color.strokeColor)
+            changeAudioRowStyle(holder, R.color.transparent, R.color.strokeColor)
         }
         multiSelection = false
         selectedAudioList.clear()
@@ -208,11 +239,11 @@ class AudioAdapter(
     private fun applySelection(holder: MyViewHolder, currentAudio: AudioEntity) {
         if (selectedAudioList.contains(currentAudio)) {
             selectedAudioList.remove(currentAudio)
-            changeAudioRowStyle(holder, R.color.cardBackgroundColor, R.color.strokeColor)
+            changeAudioRowStyle(holder, R.color.transparent, R.color.strokeColor)
             applyActionModeTitle()
         } else {
             selectedAudioList.add(currentAudio)
-            changeAudioRowStyle(holder, R.color.cardBackgroundLightColor, R.color.colorPrimary)
+            changeAudioRowStyle(holder, R.color.transparent, R.color.colorPrimary)
             applyActionModeTitle()
         }
     }

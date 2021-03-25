@@ -3,7 +3,6 @@ package ymse3p.app.audiorecorder.bindingadapters
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
-import ymse3p.app.audiorecorder.util.Constants
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 

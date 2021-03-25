@@ -33,7 +33,8 @@
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:background="@color/cardBackgroundColor">
 
                 <TextView
                     android:id="@+id/audio_title_row"
@@ -42,6 +43,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginBottom="2dp"
                     android:text="@{audioEntity.audioTitle}"
+                    android:textColor="@color/titleColor"
                     android:textSize="18sp"
                     app:layout_constraintBottom_toTopOf="@+id/guideline2"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
@@ -53,6 +55,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="2dp"
+                    android:textColor="@color/descriptionColor"
                     android:text="     "
                     setAudioCreatedDate="@{audioEntity}"
                     app:layout_constraintStart_toEndOf="@+id/audio_duration"
@@ -66,6 +69,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="2dp"
+                    android:textColor="@color/descriptionColor"
                     android:text="     "
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
                     app:layout_constraintTop_toTopOf="@+id/guideline2"
