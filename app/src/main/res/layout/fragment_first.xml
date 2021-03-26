@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/backgroundColor"
-        tools:context=".FirstFragment">
+        tools:context="ymse3p.app.ui.fragments.FirstFragment">
 
         <Button
             android:id="@+id/button_first"

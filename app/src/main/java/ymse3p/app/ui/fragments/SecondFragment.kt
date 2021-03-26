@@ -1,16 +1,14 @@
-package ymse3p.app.audiorecorder
+package ymse3p.app.ui.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.FragmentSecondBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 

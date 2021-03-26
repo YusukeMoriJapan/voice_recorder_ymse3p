@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder
+package ymse3p.app.ui.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -10,6 +10,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel

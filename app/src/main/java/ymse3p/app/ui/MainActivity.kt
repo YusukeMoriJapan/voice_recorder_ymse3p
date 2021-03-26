@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder
+package ymse3p.app.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -11,14 +11,12 @@ import android.view.MenuItem
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
