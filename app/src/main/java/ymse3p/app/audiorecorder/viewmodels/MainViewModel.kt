@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.DataStoreRepository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
@@ -134,6 +135,44 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repository.localDataSource.deleteAllAudio()
         }
+
+
+    /** サンプルデータに対する操作　*/
+    fun insertSampleAudio() {
+        val sampleUri =
+            Uri.parse("android.resource://${this.getApplication<Application>().packageName}/" + R.raw.famipop3)
+
+        val audioCreateDate = Calendar.getInstance()
+
+        val audioDuration = try {
+            MediaMetadataRetriever().run {
+                setDataSource(getApplication(), sampleUri)
+                extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            }?.toInt() ?: 0
+        } catch (e: NumberFormatException) {
+            Log.e(
+                "MediaMetadataRetriever",
+                e.message.orEmpty() + "/n" + e.stackTraceToString()
+            )
+        }
+
+        viewModelScope.launch {
+            for (i in 0..10) {
+                val foo = AudioEntity.createAudioEntity(
+                    sampleUri,
+                    audioCreateDate,
+                    "Tropical without occupation",
+                    audioDuration
+                )
+                repository.localDataSource.insertAudio(foo)
+            }
+        }
+    }
+
+    fun deleteAllSampleAudio() {
+        viewModelScope.launch { repository.localDataSource.deleteAllSampleAudio() }
+
+    }
 
 
     /** ViewModelの状態遷移に紐づく処理 */

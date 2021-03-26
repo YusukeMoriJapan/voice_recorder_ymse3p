@@ -1,4 +1,4 @@
-package ymse3p.app.ui.fragments
+package ymse3p.app.audiorecorder.ui.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -19,7 +19,7 @@ import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
 
 
 @AndroidEntryPoint
-class FirstFragment : Fragment() {
+class AudioListFragment : Fragment() {
 
     private val mainViewModel by activityViewModels<MainViewModel>()
     private val playBackViewModel by activityViewModels<PlayBackViewModel>()

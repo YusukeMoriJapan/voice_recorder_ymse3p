@@ -2,9 +2,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="ymse3p.app.audiorecorder.ymse3p.app.ui.MainActivity">
+
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/delete_all_data"
+        android:orderInCategory="98"
+        android:title="全データ削除"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/sample_data_generate"
+        android:orderInCategory="99"
+        android:title="疑似データ生成"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/all_sample_data_delete"
         android:orderInCategory="100"
-        android:title="@string/action_settings"
+        android:title="疑似データのみ削除"
         app:showAsAction="never" />
 </menu>

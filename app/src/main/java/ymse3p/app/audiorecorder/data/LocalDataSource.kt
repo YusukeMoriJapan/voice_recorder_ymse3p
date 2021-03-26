@@ -24,7 +24,11 @@ class LocalDataSource @Inject constructor(
         return audioDao.deleteAudio(audioEntity)
     }
 
-    fun deleteAllAudio() {
+    suspend fun deleteAllSampleAudio() {
+        return audioDao.deleteAllSampleAudio()
+    }
+
+    suspend fun deleteAllAudio() {
         return audioDao.deleteAllAudio()
     }
 

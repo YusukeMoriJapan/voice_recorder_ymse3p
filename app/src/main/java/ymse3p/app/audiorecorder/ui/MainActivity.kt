@@ -1,4 +1,4 @@
-package ymse3p.app.ui
+package ymse3p.app.audiorecorder.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -8,11 +8,13 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
@@ -23,6 +25,7 @@ import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
@@ -42,7 +45,6 @@ class MainActivity : AppCompatActivity() {
         /** UIの初期化 */
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setSupportActionBar(binding.toolbar)
 
         /** コルーチン起動 */
         // metadataの変更を受け取る
@@ -54,6 +56,8 @@ class MainActivity : AppCompatActivity() {
         // playbackStateの変更を受け取る
         lifecycleScope.launchWhenCreated {
             playbackViewModel.state.collect { state ->
+                if (binding.linearLayoutBottom.visibility == View.GONE)
+                    binding.linearLayoutBottom.visibility = View.VISIBLE
                 changePlaybackState(state)
             }
         }
@@ -73,7 +77,9 @@ class MainActivity : AppCompatActivity() {
             if (mainViewModel.isRecording.value) {
                 try {
                     mainViewModel.stopRecording()
-                    Toast.makeText(this, "録音を終了しました", Toast.LENGTH_SHORT).show()
+                    Snackbar.make(
+                        binding.mainActivitySnackBar, "録音を終了しました", Snackbar.LENGTH_SHORT
+                    ).show()
                     findNavController(R.id.nav_host_fragment).navigate(R.id.action_global_audioSaveBottomSheet)
                 } catch (e: CannotSaveAudioException) {
                     Toast.makeText(this, "エラー発生のため、録音データは保存されませんでした。", Toast.LENGTH_SHORT).show()
@@ -126,7 +132,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.sample_data_generate -> {
+                mainViewModel.insertSampleAudio()
+                true
+            }
+            R.id.all_sample_data_delete -> {
+                mainViewModel.deleteAllSampleAudio()
+                true
+            }
+            R.id.delete_all_data -> {
+                mainViewModel.deleteAllAudio()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -143,20 +160,20 @@ class MainActivity : AppCompatActivity() {
                     if (it == PackageManager.PERMISSION_GRANTED) {
                         try {
                             mainViewModel.startRecording()
-                            Toast.makeText(this@MainActivity, "録音を開始しました", Toast.LENGTH_SHORT)
-                                .show()
+                            Snackbar.make(
+                                binding.mainActivitySnackBar, "録音を開始しました", Snackbar.LENGTH_SHORT
+                            ).show()
                             return@launchWhenCreated
                         } catch (e: CannotStartRecordingException) {
-                            Toast.makeText(this@MainActivity, "エラーが発生しました", Toast.LENGTH_SHORT)
-                                .show()
+                            Snackbar.make(
+                                binding.mainActivitySnackBar, "エラーが発生しました", Snackbar.LENGTH_SHORT
+                            ).show()
                             return@launchWhenCreated
                         }
                     }
                 }
-                Toast.makeText(
-                    this@MainActivity,
-                    "録音機能の使用を許可して下さい",
-                    Toast.LENGTH_SHORT
+                Snackbar.make(
+                    binding.mainActivitySnackBar, "録音機能の使用を許可して下さい", Snackbar.LENGTH_SHORT
                 ).show()
             }
         }
@@ -200,9 +217,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun milliSecToTimeString(duration: Long): String {
         val minutes =
-            TimeUnit.MILLISECONDS.toMinutes(duration)
-        val seconds =
-            TimeUnit.MILLISECONDS.toSeconds(duration)
+            TimeUnit.MILLISECONDS.toMinutes(duration).toString()
+        var seconds = (
+                TimeUnit.MILLISECONDS.toSeconds(duration) % 60).toString()
+        if (seconds.length == 1) seconds = "0$seconds"
         return "${minutes}:${seconds}"
     }
 

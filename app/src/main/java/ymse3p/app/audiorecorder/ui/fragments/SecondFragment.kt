@@ -1,4 +1,4 @@
-package ymse3p.app.ui.fragments
+package ymse3p.app.audiorecorder.ui.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment

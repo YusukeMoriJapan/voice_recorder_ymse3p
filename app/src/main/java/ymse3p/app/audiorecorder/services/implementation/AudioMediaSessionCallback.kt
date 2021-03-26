@@ -60,7 +60,7 @@ class AudioMediaSessionCallback @Inject constructor(
         if (queue == null) {
             return
         } else {
-            val mediaId: String = queueItems[queue.toInt()].description.mediaId
+            val mediaId: String = queueItems.getOrNull(queue.toInt())?.description?.mediaId
                 ?: return
             val readAudioEntity: Flow<AudioEntity> =
                 repository.localDataSource.readAudioFromId(mediaId.toInt())

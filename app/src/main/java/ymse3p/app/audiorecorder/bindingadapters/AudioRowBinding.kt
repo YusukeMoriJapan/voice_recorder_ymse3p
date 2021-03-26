@@ -12,9 +12,13 @@ class AudioRowBinding {
         @BindingAdapter("setAudioDuration")
         @JvmStatic
         fun setAudioDuration(textView: TextView, audioEntity: AudioEntity) {
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(audioEntity.audioDuration.toLong())
-            val seconds = TimeUnit.MILLISECONDS.toSeconds(audioEntity.audioDuration.toLong())
-            val durationText = "${minutes.toString()}分${seconds.toString()}秒"
+            val minutes =
+                TimeUnit.MILLISECONDS.toMinutes(audioEntity.audioDuration.toLong()).toString()
+            var seconds =
+                (TimeUnit.MILLISECONDS.toSeconds(audioEntity.audioDuration.toLong()) % 60).toString()
+
+            if (seconds.length == 1) seconds = "0$seconds"
+            val durationText = "${minutes}分${seconds}秒"
             textView.text = durationText
         }
 

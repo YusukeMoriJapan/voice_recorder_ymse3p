@@ -1,11 +1,11 @@
 package ymse3p.app.audiorecorder.adapter
 
 import android.app.Application
+import android.media.session.PlaybackState
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.*
 import androidx.core.content.ContextCompat
-import androidx.core.net.toFile
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
@@ -55,13 +55,21 @@ class AudioAdapter(
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
             binding.playFloatButton.setOnClickListener {
-                playBackViewModel.viewModelScope.launch {
-                    currentPosition?.let { playBackViewModel.requestPlayQueue.emit(it) }
-                    cancel()
+                val state = playBackViewModel.state.replayCache.firstOrNull()?.state
+                val playingId = playBackViewModel.metadata.replayCache.firstOrNull()
+                    ?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)?.toInt()
+
+                if (state == PlaybackState.STATE_PLAYING && playingId == audioEntity.id) {
+                    playBackViewModel.pause()
+                } else {
+                    playBackViewModel.viewModelScope.launch {
+                        currentPosition?.let { playBackViewModel.requestPlayQueue.emit(it) }
+                        cancel()
+                    }
                 }
             }
 
-            val state = playBackViewModel.state.replayCache.firstOrNull()?.playbackState
+            val state = playBackViewModel.state.replayCache.firstOrNull()?.state
             if (state != PlaybackStateCompat.STATE_PLAYING) {
                 binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
             } else {
@@ -262,7 +270,7 @@ class AudioAdapter(
 
     private fun showSnackBar(message: String) {
         Snackbar.make(
-            requireActivity.window.decorView.rootView,
+            requireActivity.window.decorView.findViewById(R.id.main_activity_snack_bar),
             message,
             Snackbar.LENGTH_SHORT
         ).setAction("OK") {}.show()

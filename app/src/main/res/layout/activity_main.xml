@@ -10,7 +10,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="ymse3p.app.ui.MainActivity">
+        tools:context=".ui.MainActivity">
 
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBarLayout"
@@ -62,6 +62,13 @@
             android:background="@drawable/playback_shadow"
             app:layout_constraintBottom_toBottomOf="@+id/include" />
 
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/main_activity_snack_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@+id/plaback_shadow"
+            app:layout_constraintStart_toStartOf="parent" />
+
         <LinearLayout
             android:id="@+id/linearLayoutBottom"
             android:layout_width="match_parent"
@@ -73,6 +80,7 @@
             android:paddingTop="10dp"
             android:paddingEnd="10dp"
             android:paddingBottom="0dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
@@ -134,7 +142,7 @@
                     android:layout_margin="10dp"
                     android:clickable="true"
                     app:fabSize="normal"
-                    app:srcCompat="@drawable/ic_baseline_pause_24" />
+                    app:srcCompat="@drawable/ic_baseline_play_arrow_24" />
 
                 <ImageButton
                     android:id="@+id/button_next"

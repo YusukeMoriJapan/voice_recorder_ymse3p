@@ -10,14 +10,14 @@
         <item name="colorSecondaryVariant">@color/nakabeni_light</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/black</item>
         <!-- Customize your theme here. -->
         <item name="android:forceDarkAllowed">false</item>
     </style>
 
     <style name="Theme.AudioRecorder.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
     </style>
 
     <style name="Theme.AudioRecorder.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

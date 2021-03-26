@@ -3,6 +3,7 @@ package ymse3p.app.audiorecorder.viewmodels
 import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
+import android.media.session.PlaybackState
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
@@ -28,7 +29,7 @@ class PlayBackViewModel @Inject constructor(
     val requestPlayQueue = MutableSharedFlow<Int>()
 
 
-    /** 再生状態の保持 */
+    /** 再生可能かどうかの判定条件を保持 */
     private val isConnectedController = MutableStateFlow(false)
     private val isInitializedController: Deferred<Boolean> =
         async {
@@ -65,10 +66,10 @@ class PlayBackViewModel @Inject constructor(
             parentId: String,
             children: MutableList<MediaBrowserCompat.MediaItem>
         ) {
-            launch {
-                if (getController().playbackState == null)
-                    children.firstOrNull()?.mediaId?.let { playFromMediaId(it) }
-            }
+//            launch {
+//                if (getController().playbackState == null)
+//                    children.firstOrNull()?.mediaId?.let { playFromMediaId(it) }
+//            }
         }
     }
 
@@ -80,6 +81,7 @@ class PlayBackViewModel @Inject constructor(
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
             launch { _state.emit(state) }
         }
+
     }
 
 
@@ -100,7 +102,7 @@ class PlayBackViewModel @Inject constructor(
             context.startService(Intent(context, AudioService::class.java))
 
         /** ユーザーからの音源再生指示を受け取る */
-        val collectRequestQueue = launch(Dispatchers.Default) {
+        launch(Dispatchers.Default) {
             requestPlayQueue.collect {
                 skipToQueueItem(it.toLong())
             }
@@ -114,7 +116,7 @@ class PlayBackViewModel @Inject constructor(
         super.onCleared()
         mediaBrowser.disconnect()
         try {
-            if (mediaController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) return
+            if (mediaController?.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) return
             else context.stopService(Intent(context, AudioService::class.java))
         } catch (e: UninitializedPropertyAccessException) {
             context.stopService(Intent(context, AudioService::class.java))

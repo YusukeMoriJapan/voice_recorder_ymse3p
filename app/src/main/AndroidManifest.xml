@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AudioRecorder">
         <activity
-            android:name="ymse3p.app.ui.MainActivity"
+            android:name="ymse3p.app.audiorecorder.ui.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/Theme.AudioRecorder.NoActionBar">
             <intent-filter>

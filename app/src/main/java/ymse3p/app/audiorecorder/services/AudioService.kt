@@ -12,6 +12,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.media.MediaBrowserServiceCompat
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.Player.STATE_ENDED
 import com.google.android.exoplayer2.SimpleExoPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
@@ -81,6 +82,10 @@ class AudioService : MediaBrowserServiceCompat() {
             override fun onPlaybackStateChanged(state: Int) {
                 updatePlaybackState()
                 notifyNotification()
+                if (state == STATE_ENDED) {
+                    mediaSessionCallback.onSkipToNext()
+                }
+
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {

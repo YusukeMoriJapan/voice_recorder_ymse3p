@@ -19,6 +19,9 @@ interface AudioDao {
     @Delete
     suspend fun deleteAudio(audioEntity: AudioEntity)
 
+    @Query("DELETE FROM audio_table WHERE audioUri = 'android.resource://ymse3p.app.audiorecorder/2131886080' ")
+    suspend fun deleteAllSampleAudio()
+
     @Query("DELETE FROM audio_table")
-    fun deleteAllAudio()
+    suspend fun deleteAllAudio()
 }
