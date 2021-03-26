@@ -8,10 +8,8 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.session.MediaButtonReceiver
-import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.scopes.ServiceScoped
-import ymse3p.app.audiorecorder.MainActivity
+import ymse3p.app.ui.MainActivity
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.util.Constants
 import javax.inject.Inject
@@ -91,7 +89,7 @@ class AudioNotificationBuilder @Inject constructor(
                 setStyle(mediaStyle)
                 setNotificationSilent()
 
-                setSmallIcon(R.drawable.ic_launcher_foreground)
+                setSmallIcon(R.drawable.ic_logo)
                 setContentTitle(description?.title)
 
                 /** 通知バーにアクションを設定*/
