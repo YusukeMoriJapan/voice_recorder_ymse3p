@@ -13,15 +13,6 @@
         android:background="@color/backgroundColor"
         tools:context=".ui.fragments.AudioListFragment">
 
-        <Button
-            android:id="@+id/button_first"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/next"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
         <com.todkars.shimmer.ShimmerRecyclerView
             android:id="@+id/audio_list_recyclerview"
             android:layout_width="0dp"

@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
-import ymse3p.app.audiorecorder.databinding.FragmentFirstBinding
+import ymse3p.app.audiorecorder.databinding.FragmentAudioListBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
 
@@ -24,7 +24,7 @@ class AudioListFragment : Fragment() {
     private val mainViewModel by activityViewModels<MainViewModel>()
     private val playBackViewModel by activityViewModels<PlayBackViewModel>()
 
-    private lateinit var _binding: FragmentFirstBinding
+    private lateinit var _binding: FragmentAudioListBinding
     private val binding get() = _binding
 
     private val mAdapter by lazy { AudioAdapter(mainViewModel,playBackViewModel,requireActivity()) }
@@ -33,7 +33,7 @@ class AudioListFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentFirstBinding.inflate(layoutInflater, container, false)
+        _binding = FragmentAudioListBinding.inflate(layoutInflater, container, false)
         setupRecyclerView()
         readDatabase()
 
@@ -42,10 +42,6 @@ class AudioListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        view.findViewById<Button>(R.id.button_first).setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
-        }
 
     }
 

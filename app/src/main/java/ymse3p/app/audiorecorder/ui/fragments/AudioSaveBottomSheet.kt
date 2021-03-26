@@ -10,6 +10,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.FragmentAudioSaveBottomSheetBinding
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 
@@ -34,7 +35,12 @@ class AudioSaveBottomSheet : BottomSheetDialogFragment() {
         binding.audioSaveButton.setOnClickListener {
             validateInputTitle()?.let { validatedInputTitle ->
                 mainViewModel.insertAudio(validatedInputTitle)
-                Toast.makeText(requireContext(), "保存に成功しました", Toast.LENGTH_SHORT).show()
+
+                Snackbar.make(requireActivity().window.decorView.findViewById(R.id.main_activity_snack_bar),
+                    "保存に成功しました",
+                    Snackbar.LENGTH_SHORT
+                ).setAction("OK") {}.show()
+
                 val action =
                     AudioSaveBottomSheetDirections.actionAudioSaveBottomSheetToFirstFragment()
                 findNavController().navigate(action)
@@ -65,7 +71,9 @@ class AudioSaveBottomSheet : BottomSheetDialogFragment() {
         object : BottomSheetDialog(requireContext(), theme) {
             override fun onBackPressed() {
                 Snackbar.make(
-                    binding.saveBottomSheetSnackBar, "「削除ボタン」か「保存ボタン」を押してください", Snackbar.LENGTH_SHORT
+                    binding.saveBottomSheetSnackBar,
+                    "保存を行ってください",
+                    Snackbar.LENGTH_SHORT
                 ).setAction("OK") {}.show()
             }
         }

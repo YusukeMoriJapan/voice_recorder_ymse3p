@@ -141,7 +141,6 @@ class MainViewModel @Inject constructor(
     fun insertSampleAudio() {
         val sampleUri =
             Uri.parse("android.resource://${this.getApplication<Application>().packageName}/" + R.raw.famipop3)
-
         val audioCreateDate = Calendar.getInstance()
 
         val audioDuration = try {
@@ -155,7 +154,6 @@ class MainViewModel @Inject constructor(
                 e.message.orEmpty() + "/n" + e.stackTraceToString()
             )
         }
-
         viewModelScope.launch {
             for (i in 0..10) {
                 val foo = AudioEntity.createAudioEntity(
@@ -171,7 +169,6 @@ class MainViewModel @Inject constructor(
 
     fun deleteAllSampleAudio() {
         viewModelScope.launch { repository.localDataSource.deleteAllSampleAudio() }
-
     }
 
 
