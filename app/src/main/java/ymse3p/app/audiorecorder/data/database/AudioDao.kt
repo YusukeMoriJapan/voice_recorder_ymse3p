@@ -10,6 +10,9 @@ interface AudioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAudio(audioEntity: AudioEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAudioList(audioEntityList: List<AudioEntity>)
+
     @Query("SELECT * FROM audio_table  ORDER BY id ASC")
     fun readAudio(): Flow<List<AudioEntity>>
 

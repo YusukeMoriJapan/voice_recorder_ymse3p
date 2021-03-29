@@ -142,7 +142,6 @@ class MainViewModel @Inject constructor(
         val sampleUri =
             Uri.parse("android.resource://${this.getApplication<Application>().packageName}/" + R.raw.famipop3)
         val audioCreateDate = Calendar.getInstance()
-
         val audioDuration = try {
             MediaMetadataRetriever().run {
                 setDataSource(getApplication(), sampleUri)
@@ -154,16 +153,11 @@ class MainViewModel @Inject constructor(
                 e.message.orEmpty() + "/n" + e.stackTraceToString()
             )
         }
-        viewModelScope.launch {
-            for (i in 0..10) {
-                val foo = AudioEntity.createAudioEntity(
-                    sampleUri,
-                    audioCreateDate,
-                    "Tropical without occupation",
-                    audioDuration
-                )
-                repository.localDataSource.insertAudio(foo)
-            }
+        val audioList = List(100) {
+            AudioEntity.createAudioEntity(sampleUri, audioCreateDate, "録音データ${it}", audioDuration)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.localDataSource.insertAudioList(audioList)
         }
     }
 

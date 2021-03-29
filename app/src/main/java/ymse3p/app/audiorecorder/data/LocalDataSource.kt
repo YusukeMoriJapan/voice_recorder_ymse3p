@@ -20,6 +20,10 @@ class LocalDataSource @Inject constructor(
         return audioDao.insertAudio(audioEntity)
     }
 
+    suspend fun insertAudioList(audioEntityList: List<AudioEntity>) {
+        return audioDao.insertAudioList(audioEntityList)
+    }
+
     suspend fun deleteAudio(audioEntity: AudioEntity) {
         return audioDao.deleteAudio(audioEntity)
     }
