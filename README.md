@@ -11,7 +11,7 @@
 
 * 表示
   * 録音データの一覧表示
-  * 再生状態の表示(音源ごとの再生・未再生の状態表示にも対応)
+  * 再生状態の表示
   * Notificationを用いた、リアルタイムでの再生状態通知
   * ダークモードへの対応
 
@@ -26,11 +26,13 @@
 
 * 他音声アプリとの協調動作
  * 他アプリから音声が流れる場合は、再生をストップ
+## 画面遷移
+* 再生データの切替に応じて、録音データ一覧(RecyclerView)の各行にもリアルタイムで再生状態が反映されます。
 
-| Home | Drawer |
-|---|---|
-|<img src="https://user-images.githubusercontent.com/53045385/112773427-04bafe80-9071-11eb-98b9-7e51ab9cab43.gif" width="240" />|<img src="https://user-images.githubusercontent.com/53045385/112773430-071d5880-9071-11eb-991a-99c437a03aa5.gif" width="240" /> |
-
+| メイン画面 | 通知バー | 録音開始~終了 |
+|---|---|---|
+|<img src="https://user-images.githubusercontent.com/53045385/112773427-04bafe80-9071-11eb-98b9-7e51ab9cab43.gif" width="240" />|
+<img src="https://user-images.githubusercontent.com/53045385/112773430-071d5880-9071-11eb-991a-99c437a03aa5.gif" width="240" /> |<img src="https://user-images.githubusercontent.com/53045385/112773432-084e8580-9071-11eb-989c-7333bacde238.gif" width="240" /> |
 
 # 技術スタック
 
