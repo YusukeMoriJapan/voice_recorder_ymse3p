@@ -29,7 +29,7 @@
 
 | Home | Drawer |
 |---|---|
-|<img src="https://user-images.githubusercontent.com/1386930/110203091-7c04d480-7eaf-11eb-87a1-3d97bf37d7db.png" width="240" />|<img src="https://user-images.githubusercontent.com/1386930/110203097-832be280-7eaf-11eb-941f-7c6a24c759b6.png" width="240" /> |
+|<img src="https://user-images.githubusercontent.com/53045385/112773427-04bafe80-9071-11eb-98b9-7e51ab9cab43.gif" width="240" />|<img src="https://user-images.githubusercontent.com/53045385/112773430-071d5880-9071-11eb-991a-99c437a03aa5.gif" width="240" /> |
 
 
 # 技術スタック
