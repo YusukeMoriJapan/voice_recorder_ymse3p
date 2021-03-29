@@ -41,7 +41,7 @@
 
 
 # 技術スタック
-
+## ライブラリ群
 * jetpack Library
   * Room Database (SQLite)
   * Data Biding & Binding Adapter
@@ -61,6 +61,8 @@
 
 * Dependency Injection
   * Dagger Hilt
+## MAD Score
+<img width="1000" src="https://user-images.githubusercontent.com/53045385/112827234-057f7f00-90c9-11eb-8657-947598406f9e.png" />
 
 # アーキテクチャ
 
