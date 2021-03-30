@@ -24,7 +24,7 @@ import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
-import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
+import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -56,12 +56,13 @@ class MainActivity : AppCompatActivity() {
         }
         // playbackStateの変更を受け取る
         lifecycleScope.launchWhenCreated {
-            playbackViewModel.state.collect { state ->
+            playbackViewModel.playbackState.collect { state ->
                 if (binding.linearLayoutBottom.visibility == View.GONE)
                     binding.linearLayoutBottom.visibility = View.VISIBLE
                 changePlaybackState(state)
             }
         }
+
         // 録音状態の変更を受け取る
         lifecycleScope.launchWhenCreated {
             mainViewModel.isRecording.collect { isRecording ->
@@ -120,8 +121,8 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         // onStart()時の音声再生状態を受け取る
         lifecycleScope.launchWhenStarted {
-            changeMetadata(playbackViewModel.getMetadata())
-            changePlaybackState(playbackViewModel.getPlaybackState())
+            changeMetadata(playbackViewModel.getCurrentMetadata())
+            changePlaybackState(playbackViewModel.getCurrentPlaybackState())
         }
     }
 

@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.di.playbackmodule
+package ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule
 
 import android.app.NotificationManager
 import android.content.Context
@@ -21,7 +21,6 @@ import kotlinx.coroutines.Job
 import ymse3p.app.audiorecorder.services.AudioNotificationBuilder
 import ymse3p.app.audiorecorder.services.AudioService
 import javax.inject.Qualifier
-import javax.inject.Singleton
 
 
 @Qualifier

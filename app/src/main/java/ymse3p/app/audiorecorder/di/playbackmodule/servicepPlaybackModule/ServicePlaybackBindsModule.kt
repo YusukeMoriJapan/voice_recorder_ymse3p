@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.di.playbackmodule
+package ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule
 
 import android.media.AudioManager
 import android.support.v4.media.session.MediaControllerCompat

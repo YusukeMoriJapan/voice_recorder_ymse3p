@@ -10,17 +10,18 @@ import java.util.*
 
 class AudioTypeConverter {
 
-    private val dataFormat = SimpleDateFormat(DATABASE_DATE_FORMAT)
-
     @TypeConverter
     fun calendarToString(calendar: Calendar): String {
+        // SimpleDataFormatクラスはスレッドセーフではないためクラス変数としての定義は不可
+        val dataFormat = SimpleDateFormat(DATABASE_DATE_FORMAT)
         return dataFormat.format(calendar.time)
     }
 
     @TypeConverter
     fun stringToCalendar(calendarString: String): Calendar {
+        // SimpleDataFormatクラスはスレッドセーフではないためクラス変数としての定義は不可
+        val dataFormat = SimpleDateFormat(DATABASE_DATE_FORMAT)
         val calendar = Calendar.getInstance()
-
         val date = dataFormat.parse(calendarString)
         if (date == null) {
             calendar.time = Date(0)

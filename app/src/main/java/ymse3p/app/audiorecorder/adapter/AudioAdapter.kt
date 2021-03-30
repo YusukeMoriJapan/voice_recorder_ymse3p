@@ -21,7 +21,7 @@ import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
 import ymse3p.app.audiorecorder.util.AudioDiffUtil
 import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
-import ymse3p.app.audiorecorder.viewmodels.PlayBackViewModel
+import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
@@ -55,7 +55,7 @@ class AudioAdapter(
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
             binding.playFloatButton.setOnClickListener {
-                val state = playBackViewModel.state.replayCache.firstOrNull()?.state
+                val state = playBackViewModel.playbackState.replayCache.firstOrNull()?.state
                 val playingId = playBackViewModel.metadata.replayCache.firstOrNull()
                     ?.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)?.toInt()
 
@@ -63,13 +63,13 @@ class AudioAdapter(
                     playBackViewModel.pause()
                 } else {
                     playBackViewModel.viewModelScope.launch {
-                        currentPosition?.let { playBackViewModel.requestPlayQueue.emit(it) }
+                        currentPosition?.let { playBackViewModel.skipToQueueItem(it.toLong()) }
                         cancel()
                     }
                 }
             }
 
-            val state = playBackViewModel.state.replayCache.firstOrNull()?.state
+            val state = playBackViewModel.playbackState.replayCache.firstOrNull()?.state
             if (state != PlaybackStateCompat.STATE_PLAYING) {
                 binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
             } else {
@@ -148,7 +148,7 @@ class AudioAdapter(
             }
         }
         launch {
-            playBackViewModel.state.collect { playbackState ->
+            playBackViewModel.playbackState.collect { playbackState ->
                 viewHolders.forEach { viewHolder -> changePlaybackIcon(playbackState, viewHolder) }
             }
         }

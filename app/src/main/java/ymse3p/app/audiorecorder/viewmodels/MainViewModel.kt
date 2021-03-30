@@ -153,7 +153,7 @@ class MainViewModel @Inject constructor(
                 e.message.orEmpty() + "/n" + e.stackTraceToString()
             )
         }
-        val audioList = List(100) {
+        val audioList = List(1000) {
             AudioEntity.createAudioEntity(sampleUri, audioCreateDate, "録音データ${it}", audioDuration)
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -162,7 +162,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun deleteAllSampleAudio() {
-        viewModelScope.launch { repository.localDataSource.deleteAllSampleAudio() }
+        viewModelScope.launch(Dispatchers.IO) { repository.localDataSource.deleteAllSampleAudio() }
     }
 
 
