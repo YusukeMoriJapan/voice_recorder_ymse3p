@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
-import ymse3p.app.audiorecorder.di.playbackmodule.ServiceContext
-import ymse3p.app.audiorecorder.di.playbackmodule.ServicePlaybackProvidesModule
+import ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule.ServiceContext
+import ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule.ServicePlaybackProvidesModule
 import javax.inject.Inject
 
 class AudioMediaSessionCallback @Inject constructor(

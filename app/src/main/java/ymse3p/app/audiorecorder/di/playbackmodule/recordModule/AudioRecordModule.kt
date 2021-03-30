@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.di
+package ymse3p.app.audiorecorder.di.playbackmodule.recordModule
 
 import android.content.Context
 import android.media.MediaRecorder

@@ -18,7 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import ymse3p.app.audiorecorder.data.Repository
-import ymse3p.app.audiorecorder.di.playbackmodule.ServiceContext
+import ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule.ServiceContext
 import ymse3p.app.audiorecorder.util.Constants.Companion.FOREGROUND_NOTIFICATION_ID_PLAYBACK
 import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.audiorecorder.util.Constants.Companion.NOTIFICATION_CHANNEL_ID_PLAYBACK
@@ -164,39 +164,7 @@ class AudioService : MediaBrowserServiceCompat() {
         parentId: String,
         result: Result<MutableList<MediaBrowserCompat.MediaItem>>
     ) {
-
-        fun convertMetadataToMediaItem() {
-            val metadata: List<MediaMetadataCompat> = audioMediaMetaData.values.toList()
-            val mediaItems = MutableList(metadata.size) { i ->
-                MediaBrowserCompat.MediaItem(
-                    metadata[i].description,
-                    MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
-                )
-            }
-            result.sendResult(mediaItems)
-        }
-
-        if (parentId == rootId) {
-            if (isLoadingDatabase.value == false) {
-                convertMetadataToMediaItem()
-            } else {
-                CoroutineScope(serviceContext).launch {
-                    isLoadingDatabase.first {
-                        if (it == false) {
-                            convertMetadataToMediaItem()
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                }
-            }
-
-        } else {
-//            result.sendError(null)
-            result.sendResult(mutableListOf())
-        }
-
+        if (parentId == rootId) result.sendResult(convertMetadataToMediaItem())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -288,6 +256,16 @@ class AudioService : MediaBrowserServiceCompat() {
 
     private fun notifyNotification() {
         notificationManager.notify(FOREGROUND_NOTIFICATION_ID_PLAYBACK, notificationBuilder.build())
+    }
+
+    private fun convertMetadataToMediaItem(): MutableList<MediaBrowserCompat.MediaItem> {
+        val metadata: List<MediaMetadataCompat> = audioMediaMetaData.values.toList()
+        return MutableList(metadata.size) { i ->
+            MediaBrowserCompat.MediaItem(
+                metadata[i].description,
+                MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+            )
+        }
     }
 
 }
