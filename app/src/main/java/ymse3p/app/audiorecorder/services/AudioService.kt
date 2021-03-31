@@ -43,12 +43,14 @@ class AudioService : MediaBrowserServiceCompat() {
         super.onCreate()
         sessionToken = playbackComponent.getSessionToken()
 
-        serviceScope.launch() {
-            playbackComponent.playbackStateFlow().collect {
-                if ()
+        serviceScope.launch {
+            playbackComponent.playingStateFlow().collect {
+                notifyNotification()
+            }
+            playbackComponent.metadataFlow().collect {
+                notifyNotification()
             }
         }
-
     }
 
 

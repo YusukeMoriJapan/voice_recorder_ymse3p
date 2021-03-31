@@ -12,7 +12,6 @@ import dagger.hilt.android.scopes.ServiceScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -24,7 +23,7 @@ class ServicePlaybackComponentImpl
 @Inject constructor(
     private val mediaSession: MediaSessionCompat,
     private val exoPlayer: SimpleExoPlayer,
-    private val ComponentState: ServicePlaybackComponentState,
+    private val componentState: ServicePlaybackComponentState,
     private val controllerCallback: MediaControllerCompat.Callback,
     private val sessionCallback: MediaSessionCompat.Callback,
     @ServiceCoroutineScope private val serviceScope: CoroutineScope
@@ -39,7 +38,7 @@ class ServicePlaybackComponentImpl
             /** ExoPlayerの再生状態が変化したときに呼ばれる */
             override fun onPlaybackStateChanged(state: Int) {
                 updateSessionPlaybackState()
-                ComponentState.setExoPlaybackState(state)
+                componentState.setExoPlaybackState(state)
                 if (state == Player.STATE_ENDED) {
                     sessionCallback.onSkipToNext()
                 }
@@ -48,7 +47,7 @@ class ServicePlaybackComponentImpl
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 updateSessionPlaybackState()
-                ComponentState.setExoPlayingState(isPlaying)
+                componentState.setExoPlayingState(isPlaying)
             }
 
         })
@@ -65,7 +64,7 @@ class ServicePlaybackComponentImpl
 
         /** オーディオフォーカスの変更にに紐づいて、再生状態を切り替える */
         serviceScope.launch {
-            ComponentState.audioFocusChange.collect { focusChange ->
+            componentState.audioFocusChange.collect { focusChange ->
                 if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
                     mediaSession.controller.transportControls.pause()
                 else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
@@ -130,19 +129,21 @@ class ServicePlaybackComponentImpl
     override fun getCurrentPlaybackState(): PlaybackStateCompat? =
         mediaSession.controller.playbackState
 
+    override fun playingStateFlow(): StateFlow<Boolean> = componentState.exoPlayingState
+
     override fun getSessionToken(): MediaSessionCompat.Token =
         mediaSession.sessionToken
 
     override fun playbackStateFlow(): StateFlow<PlaybackStateCompat?> =
-        ComponentState.sessionPlaybackState
+        componentState.sessionPlaybackState
 
 
     override fun metadataFlow(): StateFlow<MediaMetadataCompat?> =
-        ComponentState.sessionMetadata
+        componentState.sessionMetadata
 
-    override fun mediaItemListFlow(): StateFlow<MutableList<MediaBrowserCompat.MediaItem>?> {
-        TODO("Not yet implemented")
-    }
+    override fun mediaItemListFlow(): StateFlow<MutableList<MediaBrowserCompat.MediaItem>?> =
+        componentState.mediaItemList
+
 
     override fun releaseComponent() {
         mediaSession.apply {
@@ -157,7 +158,7 @@ class ServicePlaybackComponentImpl
 
     private fun MediaSessionCompat.setPlaybackStateAndEmit(state: PlaybackStateCompat) {
         setPlaybackState(state)
-        ComponentState.setSessionPlaybackState(state)
+        componentState.setSessionPlaybackState(state)
     }
 
 }

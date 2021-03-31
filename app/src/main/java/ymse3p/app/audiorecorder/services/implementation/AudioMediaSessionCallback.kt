@@ -123,7 +123,7 @@ class AudioMediaSessionCallback
     }
 
     override fun onSkipToNext() {
-        var index = componentState.playbackQueueIndex++
+        var index = ++componentState.playbackQueueIndex
         val queueItemSize = componentState.queueItems.value?.size
         /** ライブラリの最後まで再生されてる場合は0に戻す */
         queueItemSize?.let {
@@ -134,7 +134,7 @@ class AudioMediaSessionCallback
     }
 
     override fun onSkipToPrevious() {
-        var index = componentState.playbackQueueIndex--
+        var index = --componentState.playbackQueueIndex
         val queueItemSize = componentState.queueItems.value?.size
         /** インデックスがマイナスの場合は、最後の曲を再生する*/
         queueItemSize?.let {
