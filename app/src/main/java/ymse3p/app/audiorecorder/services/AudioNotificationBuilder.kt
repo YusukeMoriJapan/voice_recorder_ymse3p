@@ -4,25 +4,27 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.session.MediaButtonReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.scopes.ServiceScoped
 import ymse3p.app.audiorecorder.ui.MainActivity
 import ymse3p.app.audiorecorder.R
+import ymse3p.app.audiorecorder.services.playbackComponent.ServicePlaybackComponent
 import ymse3p.app.audiorecorder.util.Constants
 import javax.inject.Inject
 
+@ServiceScoped
 class AudioNotificationBuilder @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val mediaSession: MediaSessionCompat,
+    private val playbackComponent: ServicePlaybackComponent
 ) {
 
     /** 現在再生している曲のMediaMetadataを取得　*/
-    private val controller get() = mediaSession.controller
-    private val mediaMetadata get() = controller.metadata
-    private val description get() = mediaMetadata?.description
+//    private val controller get() = mediaSession.controller
+//    private val mediaMetadata get() = controller.metadata
+//    private val description get() = mediaMetadata?.description
 
     /** 通知をクリックしてActivityを開くIntentを作成 */
     private val pendingIntents: PendingIntent by lazy {
@@ -56,7 +58,7 @@ class AudioNotificationBuilder @Inject constructor(
 
     /** 通知に使用するスタイルを定義 */
     private val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle().run {
-        setMediaSession(mediaSession.sessionToken)
+        setMediaSession(playbackComponent.getSessionToken())
         /** 通知を小さくたたんだ時に表示されるコントロールのインデックスを定義 */
         setShowActionsInCompactView(0)
         return@run this
@@ -90,10 +92,16 @@ class AudioNotificationBuilder @Inject constructor(
                 setNotificationSilent()
 
                 setSmallIcon(R.drawable.ic_logo)
-                setContentTitle(description?.title)
+
+                playbackComponent.getCurrentMetadata()?.description?.title?.let {
+                    setContentTitle(it)
+                }
+
 
                 /** 通知バーにアクションを設定*/
-                if (controller.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) {
+                if (playbackComponent.getCurrentPlaybackState()?.state
+                    == PlaybackStateCompat.STATE_PLAYING
+                ) {
                     addAction(
                         NotificationCompat.Action(
                             R.drawable.exo_controls_pause, "pause",

@@ -4,7 +4,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import kotlinx.coroutines.flow.SharedFlow
 
-interface PlaybackComponent {
+interface VmPlaybackComponent {
 
     fun playFromMediaId(id: String)
 

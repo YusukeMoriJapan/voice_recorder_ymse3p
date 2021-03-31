@@ -1,9 +1,8 @@
-package ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule
+package ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule
 
 import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioManager
-import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.AudioAttributesCompat
 import androidx.media.AudioFocusRequestCompat
@@ -17,15 +16,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ServiceComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import ymse3p.app.audiorecorder.services.AudioNotificationBuilder
 import ymse3p.app.audiorecorder.services.AudioService
+import ymse3p.app.audiorecorder.services.playbackComponent.ServicePlaybackComponent
 import javax.inject.Qualifier
 
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class ServiceContext
+annotation class ServiceCoroutineScope
 
 @Module
 @InstallIn(ServiceComponent::class)
@@ -67,8 +68,8 @@ object ServicePlaybackProvidesModule {
     @Provides
     fun provideAudioNotificationBuilder(
         @ApplicationContext context: Context,
-        mediaSession: MediaSessionCompat,
-    ): AudioNotificationBuilder = AudioNotificationBuilder(context, mediaSession)
+        servicePlaybackComponent: ServicePlaybackComponent,
+    ): AudioNotificationBuilder = AudioNotificationBuilder(context, servicePlaybackComponent)
 
 
     @ServiceScoped
@@ -96,29 +97,9 @@ object ServicePlaybackProvidesModule {
             .setOnAudioFocusChangeListener(onAudioFocusChangeListener).build()
     }
 
+    @ServiceCoroutineScope
     @ServiceScoped
     @Provides
-    fun provideAudioMediaMetaData()
-            : MutableMap<Int, MediaMetadataCompat> = mutableMapOf()
-
-
-    @ServiceScoped
-    @Provides
-    fun provideQueueItems()
-            : MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
-
-    class PlaybackQueueIndex() {
-        var i = 0
-    }
-
-    @ServiceScoped
-    @Provides
-    fun provideIndex(): PlaybackQueueIndex = PlaybackQueueIndex()
-
-
-    @ServiceContext
-    @ServiceScoped
-    @Provides
-    fun provideServiceContext(): Job = Job()
+    fun provideServiceCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob())
 
 }
