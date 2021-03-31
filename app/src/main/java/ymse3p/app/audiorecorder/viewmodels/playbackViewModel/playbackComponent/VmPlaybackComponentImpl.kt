@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.di.playbackmodule.playbackVmModule.PlaybackVmProvidesModule
-import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.components.PlaybackComponentState
+import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.components.VmPlaybackComponentState
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.components.PlaybackVmBrowser
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.components.PlaybackVmController
 import javax.inject.Inject
@@ -17,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
 class VmPlaybackComponentImpl @Inject constructor(
     @PlaybackVmProvidesModule.PlaybackVmCoroutineScope private val viewModelScope: CoroutineScope,
     private val playbackVmController: PlaybackVmController,
-    private val playbackComponentState: PlaybackComponentState,
+    private val vmPlaybackComponentState: VmPlaybackComponentState,
     private val playbackVmBrowser: PlaybackVmBrowser
 ) : VmPlaybackComponent, CoroutineScope {
     override val coroutineContext: CoroutineContext
@@ -63,10 +63,10 @@ class VmPlaybackComponentImpl @Inject constructor(
         playbackVmController.getController().metadata
 
     override fun playbackStateFlow(): SharedFlow<PlaybackStateCompat?> =
-        playbackComponentState.state
+        vmPlaybackComponentState.state
 
     override fun metadataFlow(): SharedFlow<MediaMetadataCompat?> =
-        playbackComponentState.metadata
+        vmPlaybackComponentState.metadata
 
     override fun releaseResources() {
         playbackVmBrowser.mediaBrowser.disconnect()

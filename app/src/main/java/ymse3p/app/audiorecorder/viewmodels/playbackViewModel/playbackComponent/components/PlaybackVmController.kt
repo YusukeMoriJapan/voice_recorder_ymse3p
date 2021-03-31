@@ -16,16 +16,16 @@ import javax.inject.Inject
 class PlaybackVmController @Inject constructor(
     @ApplicationContext private val context: Context,
     @PlaybackVmProvidesModule.PlaybackVmCoroutineScope private val viewModelScope: CoroutineScope,
-    private val playbackComponentState: PlaybackComponentState,
+    private val vmPlaybackComponentState: VmPlaybackComponentState,
     private val playbackVmBrowser: PlaybackVmBrowser,
 ) {
     private val controllerCallback = object : MediaControllerCompat.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-            metadata?.let { viewModelScope.launch { (playbackComponentState.setMetadata(it)) } }
+            metadata?.let { viewModelScope.launch { (vmPlaybackComponentState.setMetadata(it)) } }
         }
 
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-            state?.let { viewModelScope.launch { playbackComponentState.setPlaybackState(it) } }
+            state?.let { viewModelScope.launch { vmPlaybackComponentState.setPlaybackState(it) } }
         }
     }
 
@@ -34,12 +34,12 @@ class PlaybackVmController @Inject constructor(
 
     init {
         viewModelScope.launch {
-            playbackComponentState.isConnectedController.first {
+            vmPlaybackComponentState.isConnectedController.first {
                 if (it) {
                     mediaController =
                         MediaControllerCompat(context, playbackVmBrowser.mediaBrowser.sessionToken)
                             .apply { registerCallback(controllerCallback) }
-                    playbackComponentState.setControllerInitializedState(true)
+                    vmPlaybackComponentState.setControllerInitializedState(true)
                     true
                 } else {
                     false
@@ -50,7 +50,7 @@ class PlaybackVmController @Inject constructor(
 
 
     suspend fun getController(): MediaControllerCompat {
-        playbackComponentState.isInitializedController.first {
+        vmPlaybackComponentState.isInitializedController.first {
             return@first it
         }
         return mediaController

@@ -11,7 +11,7 @@ import javax.inject.Inject
 @ViewModelScoped
 class PlaybackVmBrowser @Inject constructor(
     @ApplicationContext private val context: Context,
-    playbackComponentState: PlaybackComponentState
+    private val vmPlaybackComponentState: VmPlaybackComponentState
 ) {
 
     private val subscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
@@ -32,7 +32,7 @@ class PlaybackVmBrowser @Inject constructor(
     private val connectionCallback =
         object : MediaBrowserCompat.ConnectionCallback() {
             override fun onConnected() {
-                playbackComponentState.setControllerConnectedState(true)
+                vmPlaybackComponentState.setControllerConnectedState(true)
                 mediaBrowser.subscribe(mediaBrowser.root, subscriptionCallback)
             }
         }

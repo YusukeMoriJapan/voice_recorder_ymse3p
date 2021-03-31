@@ -10,7 +10,7 @@ import ymse3p.app.audiorecorder.di.playbackmodule.playbackVmModule.PlaybackVmPro
 import javax.inject.Inject
 
 @ViewModelScoped
-class PlaybackComponentState @Inject constructor(
+class VmPlaybackComponentState @Inject constructor(
     @PlaybackVmProvidesModule.PlaybackVmCoroutineScope private val viewModelScope: CoroutineScope
 ) {
     /** state */
