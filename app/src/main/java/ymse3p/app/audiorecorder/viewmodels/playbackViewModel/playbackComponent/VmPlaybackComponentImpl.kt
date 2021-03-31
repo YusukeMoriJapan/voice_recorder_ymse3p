@@ -14,12 +14,12 @@ import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
 @ViewModelScoped
-class PlaybackComponentImpl @Inject constructor(
+class VmPlaybackComponentImpl @Inject constructor(
     @PlaybackVmProvidesModule.PlaybackVmCoroutineScope private val viewModelScope: CoroutineScope,
     private val playbackVmController: PlaybackVmController,
     private val playbackComponentState: PlaybackComponentState,
     private val playbackVmBrowser: PlaybackVmBrowser
-) : PlaybackComponent, CoroutineScope {
+) : VmPlaybackComponent, CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = viewModelScope.coroutineContext
 

@@ -3,7 +3,6 @@ package ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule
 import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioManager
-import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.AudioAttributesCompat
 import androidx.media.AudioFocusRequestCompat
@@ -21,7 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import ymse3p.app.audiorecorder.services.AudioNotificationBuilder
 import ymse3p.app.audiorecorder.services.AudioService
-import ymse3p.app.audiorecorder.services.ServicePlaybackComponent
+import ymse3p.app.audiorecorder.services.playbackComponent.ServicePlaybackComponent
 import javax.inject.Qualifier
 
 

@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.services.implementation
+package ymse3p.app.audiorecorder.services.playbackComponent.components
 
 import android.app.NotificationManager
 import android.support.v4.media.MediaMetadataCompat

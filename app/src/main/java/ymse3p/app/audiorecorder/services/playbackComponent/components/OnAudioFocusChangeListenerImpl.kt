@@ -1,10 +1,10 @@
-package ymse3p.app.audiorecorder.services.implementation
+package ymse3p.app.audiorecorder.services.playbackComponent.components
 
 import android.media.AudioManager
-import android.support.v4.media.session.MediaSessionCompat
-import ymse3p.app.audiorecorder.services.ServicePlaybackComponentState
+import dagger.hilt.android.scopes.ServiceScoped
 import javax.inject.Inject
 
+@ServiceScoped
 class OnAudioFocusChangeListenerImpl @Inject constructor(
     private val servicePlaybackComponentState: ServicePlaybackComponentState
 ) : AudioManager.OnAudioFocusChangeListener {

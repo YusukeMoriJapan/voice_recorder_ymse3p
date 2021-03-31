@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.services
+package ymse3p.app.audiorecorder.services.playbackComponent
 
 import android.media.AudioManager
 import android.support.v4.media.MediaBrowserCompat
@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule.ServiceCoroutineScope
+import ymse3p.app.audiorecorder.services.playbackComponent.components.ServicePlaybackComponentState
 import javax.inject.Inject
 
 @ServiceScoped

@@ -8,14 +8,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import ymse3p.app.audiorecorder.di.playbackmodule.playbackVmModule.PlaybackVmProvidesModule
 import ymse3p.app.audiorecorder.services.AudioService
-import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.PlaybackComponent
+import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.playbackComponent.VmPlaybackComponent
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
 @HiltViewModel
 class PlayBackViewModel @Inject constructor(
     application: Application,
-    private val playbackComponent: PlaybackComponent,
+    private val vmPlaybackComponent: VmPlaybackComponent,
     @PlaybackVmProvidesModule.PlaybackVmCoroutineScope
     private val playbackVmScope: CoroutineScope
 ) : AndroidViewModel(application), CoroutineScope {
@@ -25,8 +25,8 @@ class PlayBackViewModel @Inject constructor(
 
     private val context get() = getApplication<Application>().applicationContext
 
-    val playbackState = playbackComponent.playbackStateFlow()
-    val metadata = playbackComponent.metadataFlow()
+    val playbackState = vmPlaybackComponent.playbackStateFlow()
+    val metadata = vmPlaybackComponent.metadataFlow()
 
 
     init {
@@ -38,47 +38,47 @@ class PlayBackViewModel @Inject constructor(
     }
 
     fun playFromMediaId(id: String) {
-        playbackComponent.playFromMediaId(id)
+        vmPlaybackComponent.playFromMediaId(id)
     }
 
     fun skipToQueueItem(queue: Long) {
-        playbackComponent.skipToQueueItem(queue)
+        vmPlaybackComponent.skipToQueueItem(queue)
     }
 
     fun play() {
-        playbackComponent.play()
+        vmPlaybackComponent.play()
     }
 
     fun pause() {
-        playbackComponent.pause()
+        vmPlaybackComponent.pause()
     }
 
     fun stop() {
-        playbackComponent.stop()
+        vmPlaybackComponent.stop()
     }
 
     fun skipToPrev() {
-        playbackComponent.skipToPrev()
+        vmPlaybackComponent.skipToPrev()
     }
 
     fun skipToNext() {
-        playbackComponent.skipToNext()
+        vmPlaybackComponent.skipToNext()
     }
 
     fun seekTo(position: Long) {
-        playbackComponent.seekTo(position)
+        vmPlaybackComponent.seekTo(position)
     }
 
-    suspend fun getCurrentPlaybackState() = playbackComponent.getCurrentPlaybackState()
-    suspend fun getCurrentMetadata() = playbackComponent.getCurrentMetadata()
+    suspend fun getCurrentPlaybackState() = vmPlaybackComponent.getCurrentPlaybackState()
+    suspend fun getCurrentMetadata() = vmPlaybackComponent.getCurrentMetadata()
 
     /** ViewModelの状態遷移に対応した処理 */
     override fun onCleared() {
         super.onCleared()
         if (playbackState.replayCache.firstOrNull()?.state == PlaybackStateCompat.STATE_PLAYING) {
-            playbackComponent.releaseResources()
+            vmPlaybackComponent.releaseResources()
         } else {
-            playbackComponent.releaseResources()
+            vmPlaybackComponent.releaseResources()
             context.stopService(Intent(context, AudioService::class.java))
         }
         cancel()

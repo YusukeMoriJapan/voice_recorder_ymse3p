@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.services
+package ymse3p.app.audiorecorder.services.playbackComponent
 
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat

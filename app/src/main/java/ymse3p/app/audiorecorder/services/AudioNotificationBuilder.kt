@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.session.MediaButtonReceiver
@@ -12,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
 import ymse3p.app.audiorecorder.ui.MainActivity
 import ymse3p.app.audiorecorder.R
+import ymse3p.app.audiorecorder.services.playbackComponent.ServicePlaybackComponent
 import ymse3p.app.audiorecorder.util.Constants
 import javax.inject.Inject
 

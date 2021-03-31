@@ -1,4 +1,4 @@
-package ymse3p.app.audiorecorder.services.implementation
+package ymse3p.app.audiorecorder.services.playbackComponent.components
 
 import android.content.Intent
 import android.media.AudioManager
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule.ServiceCoroutineScope
-import ymse3p.app.audiorecorder.services.ServicePlaybackComponentState
 import javax.inject.Inject
 
 @ServiceScoped
