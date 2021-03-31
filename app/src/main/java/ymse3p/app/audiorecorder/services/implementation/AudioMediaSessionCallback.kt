@@ -3,31 +3,31 @@ package ymse3p.app.audiorecorder.services.implementation
 import android.content.Intent
 import android.media.AudioManager
 import android.os.Bundle
-import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
+import dagger.hilt.android.scopes.ServiceScoped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
-import ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule.ServiceContext
-import ymse3p.app.audiorecorder.di.playbackmodule.servicepPlaybackModule.ServicePlaybackProvidesModule
+import ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule.ServiceCoroutineScope
+import ymse3p.app.audiorecorder.services.ServicePlaybackComponentState
 import javax.inject.Inject
 
-class AudioMediaSessionCallback @Inject constructor(
+@ServiceScoped
+class AudioMediaSessionCallback
+@Inject constructor(
     private val repository: Repository,
     private val simpleExoPlayer: SimpleExoPlayer,
     private val mediaSession: MediaSessionCompat,
     private val audioManager: AudioManager,
     private val audioFocusRequest: AudioFocusRequestCompat,
-    private val audioMediaMetaData: MutableMap<Int, MediaMetadataCompat>,
-    private val queueItems: MutableList<MediaSessionCompat.QueueItem>,
-    private var playbackQueueIndex: ServicePlaybackProvidesModule.PlaybackQueueIndex,
-    @ServiceContext private val serviceContext: Job
+    private val componentState: ServicePlaybackComponentState,
+    @ServiceCoroutineScope private val serviceScope: CoroutineScope
 ) : MediaSessionCompat.Callback() {
 
     /** TransportController#playFromMediaId　に対して呼び出される */
@@ -37,7 +37,7 @@ class AudioMediaSessionCallback @Inject constructor(
         } else {
             val readAudioEntity: Flow<AudioEntity> =
                 repository.localDataSource.readAudioFromId(id.toInt())
-            CoroutineScope(serviceContext).launch {
+            serviceScope.launch {
                 readAudioEntity.first { audioEntity ->
                     if (audioEntity != null) {
                         withContext(Dispatchers.Main) {
@@ -47,7 +47,12 @@ class AudioMediaSessionCallback @Inject constructor(
                             onPlay()
                         }
                         /** 再生中の曲情報(MediaSessionが配信している曲)を設定 */
-                        mediaSession.setMetadata(audioMediaMetaData[id.toInt()])
+                        componentState.audioMediaMetaData.value?.get(id.toInt())
+                            ?.let {
+                                mediaSession.setMetadata(it)
+                                // QueueIndexを更新する処理の追加が必要
+                            }
+
                     }
                     return@first true
                 }
@@ -60,11 +65,12 @@ class AudioMediaSessionCallback @Inject constructor(
         if (queue == null) {
             return
         } else {
-            val mediaId: String = queueItems.getOrNull(queue.toInt())?.description?.mediaId
-                ?: return
+            val mediaId: String =
+                componentState.queueItems.value?.getOrNull(queue.toInt())?.description?.mediaId
+                    ?: return
             val readAudioEntity: Flow<AudioEntity> =
                 repository.localDataSource.readAudioFromId(mediaId.toInt())
-            CoroutineScope(serviceContext).launch {
+            serviceScope.launch {
                 readAudioEntity.first { audioEntity ->
                     if (audioEntity != null) {
                         withContext(Dispatchers.Main) {
@@ -73,9 +79,11 @@ class AudioMediaSessionCallback @Inject constructor(
                             mediaSession.isActive = true
                             onPlay()
                         }
+                        componentState.playbackQueueIndex = queue.toInt()
                         /** 再生中の曲情報(MediaSessionが配信している曲)を設定 */
-                        mediaSession.setMetadata(audioMediaMetaData[mediaId.toInt()])
-                        playbackQueueIndex.i = queue.toInt()
+                        componentState.audioMediaMetaData.value?.get(mediaId.toInt())?.let {
+                            mediaSession.setMetadata(it)
+                        }
                     }
                     return@first true
                 }
@@ -115,17 +123,25 @@ class AudioMediaSessionCallback @Inject constructor(
     }
 
     override fun onSkipToNext() {
-        playbackQueueIndex.i++
+        var index = componentState.playbackQueueIndex++
+        val queueItemSize = componentState.queueItems.value?.size
         /** ライブラリの最後まで再生されてる場合は0に戻す */
-        if (playbackQueueIndex.i >= queueItems.size) playbackQueueIndex.i = 0
-        onSkipToQueueItem(playbackQueueIndex.i.toLong())
+        queueItemSize?.let {
+            if (index >= it) index = 0
+            onSkipToQueueItem(index.toLong())
+        }
+
     }
 
     override fun onSkipToPrevious() {
-        playbackQueueIndex.i--
+        var index = componentState.playbackQueueIndex--
+        val queueItemSize = componentState.queueItems.value?.size
         /** インデックスがマイナスの場合は、最後の曲を再生する*/
-        if (playbackQueueIndex.i < 0) playbackQueueIndex.i = queueItems.size - 1
-        onSkipToQueueItem(playbackQueueIndex.i.toLong())
+        queueItemSize?.let {
+            if (index < 0) index = it - 1
+            onSkipToQueueItem(index.toLong())
+        }
+
     }
 
 

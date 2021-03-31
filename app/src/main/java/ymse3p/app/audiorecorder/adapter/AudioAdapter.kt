@@ -54,6 +54,8 @@ class AudioAdapter(
 
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
+
+            /** 再生ボタンのクリックリスナー設定　*/
             binding.playFloatButton.setOnClickListener {
                 val state = playBackViewModel.playbackState.replayCache.firstOrNull()?.state
                 val playingId = playBackViewModel.metadata.replayCache.firstOrNull()
@@ -69,6 +71,8 @@ class AudioAdapter(
                 }
             }
 
+            /** バインド時に、「現在再生中の曲」と「バインドされた音声ID」が一致しているかどうか確認
+             　　一致している場合は、一時停止アイコンに切り替える */
             val state = playBackViewModel.playbackState.replayCache.firstOrNull()?.state
             if (state != PlaybackStateCompat.STATE_PLAYING) {
                 binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
@@ -142,6 +146,8 @@ class AudioAdapter(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
+
+        /** 再生音源が変更されたら、すべてのViewHolderに対してアイコン変更有無確認を実行する */
         launch {
             playBackViewModel.metadata.collect { metadata ->
                 viewHolders.forEach { viewHolder -> changePlaybackIcon(metadata, viewHolder) }
