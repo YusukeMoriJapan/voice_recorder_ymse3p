@@ -63,6 +63,13 @@ class ServicePlaybackComponentImpl
             }
         }
 
+        /** 最新の再生リストをMediaSessionに反映 */
+        serviceScope.launch(Dispatchers.Default) {
+            componentState.queueItems.collect { queueList ->
+                queueList?.let { mediaSession.setQueue(it) }
+            }
+        }
+
         /** オーディオフォーカスの変更にに紐づいて、再生状態を切り替える */
         serviceScope.launch {
             componentState.audioFocusChange.collect { focusChange ->
