@@ -1,15 +1,21 @@
 package ymse3p.app.audiorecorder.services.playbackComponent.components
 
+import android.app.Application
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import com.google.android.exoplayer2.Player
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule.ServiceCoroutineScope
@@ -18,6 +24,7 @@ import javax.inject.Inject
 
 @ServiceScoped
 class ServicePlaybackComponentState @Inject constructor(
+    @ApplicationContext private val context: Context,
     repository: Repository,
     @ServiceCoroutineScope private val serviceScope: CoroutineScope
 ) {
@@ -103,6 +110,32 @@ class ServicePlaybackComponentState @Inject constructor(
                             MediaMetadataCompat.METADATA_KEY_DURATION,
                             audioEntity.audioDuration.toLong()
                         )
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_ALBUM,
+                            "ボイスレコーダー"
+                        )
+                        /**アーティスト名・ジャンル名はWEAR上で表示するために設定必須。
+                         設定なしだと、Wear上に再生状態が表示されない！ */
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST,
+                            "   "
+                        )
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_GENRE,
+                            "    "
+
+                        ).putBitmap(
+                            MediaMetadataCompat.METADATA_KEY_ALBUM_ART,
+                            BitmapFactory.decodeResource(
+                                context.resources,
+                                R.drawable.ic_launcher_for_album_round
+                            )
+                        )
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI,
+                            "android.resource://${context.packageName}/" + R.drawable.ic_launcher_for_album
+                        )
+
                         .build()
                 this[audioEntity.id] = mediaMetaData
             }

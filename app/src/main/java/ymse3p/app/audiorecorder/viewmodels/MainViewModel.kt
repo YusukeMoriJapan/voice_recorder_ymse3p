@@ -153,7 +153,7 @@ class MainViewModel @Inject constructor(
                 e.message.orEmpty() + "/n" + e.stackTraceToString()
             )
         }
-        val audioList = List(1000) {
+        val audioList = List(10) {
             AudioEntity.createAudioEntity(sampleUri, audioCreateDate, "録音データ${it}", audioDuration)
         }
         viewModelScope.launch(Dispatchers.IO) {
