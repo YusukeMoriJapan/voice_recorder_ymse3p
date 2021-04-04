@@ -23,9 +23,13 @@
   * 任意の音源データ再生(バックグラウンド再生や連続再生にも対応)
   * 通知バーでの再生音源データ切り替え
   * Bluetooth機器(イヤホンやリモコン等)からの再生操作受付
+  * ボイスコマンドへの対応("OK google、次の曲を再生して"等)
 
 * 他音声アプリとの協調動作
     * 他アプリから音声が流れる場合は、再生をストップ
+
+* スマートウォッチ(Wear OS)への完全対応
+    * Wear OS上から再生操作や選曲が可能
 ## アプリ画面詳細
 * 再生データの切替に応じて、録音データ一覧(RecyclerView)の各行にもリアルタイムで再生状態が反映されます。
 
@@ -33,9 +37,14 @@
 |---|---|---|
 |<img src="https://user-images.githubusercontent.com/53045385/112773427-04bafe80-9071-11eb-98b9-7e51ab9cab43.gif" width="240" />|<img src="https://user-images.githubusercontent.com/53045385/112773430-071d5880-9071-11eb-991a-99c437a03aa5.gif" width="240" /> |<img src="https://user-images.githubusercontent.com/53045385/112773432-084e8580-9071-11eb-989c-7333bacde238.gif" width="240" /> |
 
-| データ削除(ダークモード) |
-|---|
-|<img src="https://user-images.githubusercontent.com/53045385/112776013-78610980-9079-11eb-9fd9-9b40743f2287.gif" width="240" /> |
+| データ削除(ダークモード) | Wear OSへの完全対応 |
+|---|---|
+|<img src="https://user-images.githubusercontent.com/53045385/112776013-78610980-9079-11eb-9fd9-9b40743f2287.gif" width="240" /> |<img src="https://user-images.githubusercontent.com/53045385/113507675-f7c57000-9586-11eb-8b7b-1dce65fec192.gif" width="500" /> |
+
+
+
+
+
 
 
 
