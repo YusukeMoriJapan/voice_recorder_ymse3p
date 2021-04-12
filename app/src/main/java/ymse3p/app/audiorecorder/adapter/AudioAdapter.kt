@@ -64,15 +64,14 @@ class AudioAdapter(
                 if (state == PlaybackState.STATE_PLAYING && playingId == audioEntity.id) {
                     playBackViewModel.pause()
                 } else {
-                    playBackViewModel.viewModelScope.launch {
-                        currentPosition?.let { playBackViewModel.skipToQueueItem(it.toLong()) }
-                        cancel()
+                    currentPosition?.let {
+                        playBackViewModel.skipToQueueItem(it.toLong())
                     }
                 }
             }
 
             /** バインド時に、「現在再生中の曲」と「バインドされた音声ID」が一致しているかどうか確認
-             　　一致している場合は、一時停止アイコンに切り替える */
+            　　一致している場合は、一時停止アイコンに切り替える */
             val state = playBackViewModel.playbackState.replayCache.firstOrNull()?.state
             if (state != PlaybackStateCompat.STATE_PLAYING) {
                 binding.playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
