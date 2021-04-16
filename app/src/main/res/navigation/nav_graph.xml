@@ -9,7 +9,17 @@
         android:id="@+id/FirstFragment"
         android:name="ymse3p.app.audiorecorder.ui.fragments.AudioListFragment"
         android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_audio_list"/>
+        tools:layout="@layout/fragment_audio_list">
+        <action
+            android:id="@+id/action_FirstFragment_to_mapsFragment"
+            app:destination="@id/mapsFragment"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpTo="@id/FirstFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
     <dialog
         android:id="@+id/audioSaveBottomSheet"
         android:name="ymse3p.app.audiorecorder.ui.fragments.AudioSaveBottomSheet"
@@ -24,4 +34,9 @@
     <action
         android:id="@+id/action_global_audioSaveBottomSheet"
         app:destination="@id/audioSaveBottomSheet" />
+    <fragment
+        android:id="@+id/mapsFragment"
+        android:name="ymse3p.app.audiorecorder.MapsFragment"
+        android:label="fragment_maps"
+        tools:layout="@layout/fragment_maps" />
 </navigation>
