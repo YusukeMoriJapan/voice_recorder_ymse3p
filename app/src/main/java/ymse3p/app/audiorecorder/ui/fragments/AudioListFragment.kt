@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
@@ -34,6 +35,9 @@ class AudioListFragment : Fragment() {
         setupRecyclerView()
         readDatabase()
 
+        binding.toMapFragButton.setOnClickListener {
+            findNavController().navigate(AudioListFragmentDirections.actionFirstFragmentToMapsFragment())
+        }
         return binding.root
     }
 
