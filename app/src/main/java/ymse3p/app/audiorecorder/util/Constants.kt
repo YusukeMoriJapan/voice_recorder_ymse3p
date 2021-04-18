@@ -1,7 +1,13 @@
 package ymse3p.app.audiorecorder.util
 
+import ymse3p.app.audiorecorder.BuildConfig
+
 class Constants {
-    companion object{
+    companion object {
+
+        const val BASE_URL = "https://roads.googleapis.com/v1/"
+        const val API_KEY = BuildConfig.ApiKey
+
         // ROOM database
         const val DATABASE_NAME = "audio_database"
         const val AUDIO_TABLE = "audio_table"

@@ -49,10 +49,30 @@ class MainActivity : AppCompatActivity() {
     private val isSavingLocation = MutableStateFlow(false)
 
     private val locationCallback = object : LocationCallback() {
+        val locationsString = StringBuilder()
         override fun onLocationResult(locationResult: LocationResult) {
+            locationsString.append(
+                "記録時間:" + locationResult.lastLocation.time.toString() +
+                        "\nlongitude:" + locationResult.lastLocation.longitude.toString() +
+                        "\nlatitude:" + locationResult.lastLocation.latitude.toString() +
+                        "\nspeed:" + locationResult.lastLocation.speed.toString() +
+                        "\nbearing:" + locationResult.lastLocation.bearing.toString() +
+                        "\n"
+            )
+
             if (isSavingLocation.value) {
                 savedLocation = locationResult.locations
+                savedLocation.forEach {
+                    locationsString.append(
+                        "記録時間:" + it.time.toString() +
+                                "\nlongitude:" + it.longitude.toString() +
+                                "\nlatitude:" + it.latitude.toString() +
+                                "\n"
+                    )
+                }
+                binding.debugGpsLoc.text = locationsString
                 isSavingLocation.value = false
+//                Location("").
             }
         }
     }
@@ -171,7 +191,6 @@ class MainActivity : AppCompatActivity() {
             else
                 try {
                     fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
                     lifecycleScope.launchWhenCreated {
                         mainViewModel.startRecording()
                         startLocationUpdates()
