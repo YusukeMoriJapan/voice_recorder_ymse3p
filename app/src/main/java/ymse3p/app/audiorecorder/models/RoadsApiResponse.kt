@@ -1,6 +1,6 @@
 package ymse3p.app.audiorecorder.models
 
-data class SnappedPoints(
+data class RoadsApiResponse(
     val snappedPoints: List<SnappedPoint>
     )
 
