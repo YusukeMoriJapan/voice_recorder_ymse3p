@@ -4,11 +4,14 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ymse3p.app.audiorecorder.BuildConfig
 import ymse3p.app.audiorecorder.data.network.RoadsApi
 import ymse3p.app.audiorecorder.util.Constants.Companion.API_KEY
+import ymse3p.app.audiorecorder.util.Constants.Companion.BASE_URL
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -39,7 +42,7 @@ class NetworkModule {
         gSonConverterFactory: GsonConverterFactory
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(API_KEY)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(gSonConverterFactory)
             .build()

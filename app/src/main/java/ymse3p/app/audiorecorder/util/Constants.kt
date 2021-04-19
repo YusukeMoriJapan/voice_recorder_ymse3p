@@ -4,7 +4,6 @@ import ymse3p.app.audiorecorder.BuildConfig
 
 class Constants {
     companion object {
-
         const val BASE_URL = "https://roads.googleapis.com/v1/"
         const val API_KEY = BuildConfig.ApiKey
 
