@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
+import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_RECORD_AUDIO_PERMISSION
@@ -41,41 +42,6 @@ class MainActivity : AppCompatActivity() {
     /** ViewModels */
     private val mainViewModel by viewModels<MainViewModel>()
     private val playbackViewModel by viewModels<PlayBackViewModel>()
-
-    /** Location */
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var savedLocation: List<Location>
-
-    private val isSavingLocation = MutableStateFlow(false)
-
-    private val locationCallback = object : LocationCallback() {
-        val locationsString = StringBuilder()
-        override fun onLocationResult(locationResult: LocationResult) {
-            locationsString.append(
-                "記録時間:" + locationResult.lastLocation.time.toString() +
-                        "\nlongitude:" + locationResult.lastLocation.longitude.toString() +
-                        "\nlatitude:" + locationResult.lastLocation.latitude.toString() +
-                        "\nspeed:" + locationResult.lastLocation.speed.toString() +
-                        "\nbearing:" + locationResult.lastLocation.bearing.toString() +
-                        "\n"
-            )
-
-            if (isSavingLocation.value) {
-                savedLocation = locationResult.locations
-                savedLocation.forEach {
-                    locationsString.append(
-                        "記録時間:" + it.time.toString() +
-                                "\nlongitude:" + it.longitude.toString() +
-                                "\nlatitude:" + it.latitude.toString() +
-                                "\n"
-                    )
-                }
-                binding.debugGpsLoc.text = locationsString
-                isSavingLocation.value = false
-//                Location("").
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             if (mainViewModel.isRecording.value) {
                 try {
                     mainViewModel.stopRecording()
-                    stopLocationUpdates()
+                    mainViewModel.stopLocationUpdates()
                     Snackbar.make(
                         binding.mainActivitySnackBar, "録音を終了しました", Snackbar.LENGTH_SHORT
                     ).show()
@@ -190,10 +156,9 @@ class MainActivity : AppCompatActivity() {
                 showSnackBarGrantNeeded()
             else
                 try {
-                    fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
                     lifecycleScope.launchWhenCreated {
                         mainViewModel.startRecording()
-                        startLocationUpdates()
+                        mainViewModel.startLocationUpdates()
                     }
                     Snackbar.make(
                         binding.mainActivitySnackBar, "録音を開始しました", Snackbar.LENGTH_SHORT
@@ -203,6 +168,9 @@ class MainActivity : AppCompatActivity() {
                     Snackbar.make(
                         binding.mainActivitySnackBar, "エラーが発生しました", Snackbar.LENGTH_SHORT
                     ).show()
+                    return
+                } catch (e: CannotCollectGpsLocationException) {
+                    showSnackBarGrantNeeded()
                     return
                 }
         }
@@ -260,46 +228,10 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun startLocationUpdates() {
-        val locationRequest = LocationRequest.create().apply {
-            interval = 5000
-            fastestInterval = 1000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-
-        val isFineLocationGranted = ActivityCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val isCoarseLocationGranted = ActivityCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!isFineLocationGranted && !isCoarseLocationGranted) {
-            showSnackBarGrantNeeded()
-            return
-        }
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
-    }
-
-    private fun stopLocationUpdates() {
-        isSavingLocation.value = true
-        /** 取得した全ての位置情報を保存する */
-        lifecycleScope.launchWhenCreated {
-            isSavingLocation.first { isSavingLocation ->
-                if (isSavingLocation) return@first false
-                fusedLocationClient.removeLocationUpdates(locationCallback)
-                return@first true
-            }
-        }
-    }
-
     private fun showSnackBarGrantNeeded() {
         Snackbar.make(
             binding.mainActivitySnackBar,
-            "録音機能及び、位置情報の取得を許可して下さい",
+            "位置情報を記録するには録音機能及び、位置情報の取得を許可して下さい",
             Snackbar.LENGTH_SHORT
         ).show()
     }

@@ -1,14 +1,19 @@
 package ymse3p.app.audiorecorder.viewmodels
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +25,7 @@ import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.DataStoreRepository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
+import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
 import java.io.File
@@ -170,6 +176,76 @@ class MainViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         audioRecorder.release()
+    }
+
+
+    /** Location */
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var savedLocation: List<Location>
+
+    private val isSavingLocation = MutableStateFlow(false)
+
+    private val locationCallback = object : LocationCallback() {
+        val locationsString = StringBuilder()
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationsString.append(
+                "記録時間:" + locationResult.lastLocation.time.toString() +
+                        "\nlongitude:" + locationResult.lastLocation.longitude.toString() +
+                        "\nlatitude:" + locationResult.lastLocation.latitude.toString() +
+                        "\nspeed:" + locationResult.lastLocation.speed.toString() +
+                        "\nbearing:" + locationResult.lastLocation.bearing.toString() +
+                        "\n"
+            )
+
+            if (isSavingLocation.value) {
+                savedLocation = locationResult.locations
+                savedLocation.forEach {
+                    locationsString.append(
+                        "記録時間:" + it.time.toString() +
+                                "\nlongitude:" + it.longitude.toString() +
+                                "\nlatitude:" + it.latitude.toString() +
+                                "\n"
+                    )
+                }
+//                binding.debugGpsLoc.text = locationsString
+                isSavingLocation.value = false
+            }
+        }
+    }
+
+    fun startLocationUpdates() {
+        val locationRequest = LocationRequest.create().apply {
+            interval = 5000
+            fastestInterval = 1000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+
+        val isFineLocationGranted = ActivityCompat.checkSelfPermission(
+            getApplication(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val isCoarseLocationGranted = ActivityCompat.checkSelfPermission(
+            getApplication(),
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!isFineLocationGranted && !isCoarseLocationGranted) {
+            throw CannotCollectGpsLocationException("FineLocation and CoarseLocation are not granted.")
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
+    }
+
+    fun stopLocationUpdates() {
+        isSavingLocation.value = true
+        /** 取得した全ての位置情報を保存する */
+        viewModelScope.launch {
+            isSavingLocation.first { isSavingLocation ->
+                if (isSavingLocation) return@first false
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+                return@first true
+            }
+        }
     }
 
 }
