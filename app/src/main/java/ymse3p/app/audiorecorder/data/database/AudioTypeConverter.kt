@@ -4,7 +4,11 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.room.TypeConverter
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.util.Constants.Companion.DATABASE_DATE_FORMAT
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -41,4 +45,39 @@ class AudioTypeConverter {
     fun stringToUri(uriString: String): Uri {
         return uriString.toUri()
     }
+
+    @TypeConverter
+    fun gpsListToJson(gpsDataList: List<GpsData>?): String? {
+        gpsDataList ?: return null
+        val gSon = GsonBuilder().serializeNulls().create()
+
+        return try {
+            gSon.toJson(
+                gpsDataList,
+                TypeToken.getParameterized(List::class.java, GpsData::class.java).type,
+            )
+
+        } catch (e: IOException) {
+            Log.d("gpsListToJson()", e.message.orEmpty())
+            null
+        }
+    }
+
+    @TypeConverter
+    fun jsonToGpsList(json: String?): List<GpsData>? {
+        json ?: return null
+        val gSon = GsonBuilder().serializeNulls().create()
+
+        return try {
+            gSon.fromJson(
+                json,
+                TypeToken.getParameterized(List::class.java, GpsData::class.java).type
+            )
+
+        } catch (e: IOException) {
+            Log.d("jsonToGpsList", e.message.orEmpty())
+            null
+        }
+    }
+
 }

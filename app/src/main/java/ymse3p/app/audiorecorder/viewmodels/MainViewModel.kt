@@ -2,6 +2,7 @@ package ymse3p.app.audiorecorder.viewmodels
 
 import android.Manifest
 import android.app.Application
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.media.MediaMetadataRetriever
@@ -10,21 +11,18 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.*
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.DataStoreRepository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
+import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
@@ -52,6 +50,7 @@ class MainViewModel @Inject constructor(
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording
     private var currentOutputFileName: File? = null
+    private var currentAudioCreatedDate: Calendar? = null
 
 
     /** 録音処理(Media Recorderに対する処理) */
@@ -76,6 +75,7 @@ class MainViewModel @Inject constructor(
                 start()
             }
             _isRecording.value = true
+            currentAudioCreatedDate = Calendar.getInstance()
             dataStoreRepository.incrementRecordedAudioId()
         } catch (e: IllegalStateException) {
             Log.e("MediaRecorder", e.message.orEmpty() + "/n" + e.stackTraceToString())
@@ -102,6 +102,8 @@ class MainViewModel @Inject constructor(
                 reset()
                 _isRecording.value = false
                 throw CannotSaveAudioException("RuntimeException occurred")
+            } finally {
+                stopLocationUpdates()
             }
         }
     }
@@ -111,7 +113,6 @@ class MainViewModel @Inject constructor(
     fun insertAudio(
         audioTitle: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
-        val audioCreateDate = Calendar.getInstance()
         val audioDuration = try {
             MediaMetadataRetriever().run {
                 setDataSource(currentOutputFileName?.path)
@@ -124,9 +125,10 @@ class MainViewModel @Inject constructor(
         val audioEntity =
             AudioEntity.createAudioEntity(
                 Uri.fromFile(currentOutputFileName),
-                audioCreateDate,
+                currentAudioCreatedDate ?: Calendar.getInstance(),
                 audioTitle,
-                audioDuration
+                audioDuration,
+                savedGpsDataList
             )
         repository.localDataSource.insertAudio(audioEntity)
         currentOutputFileName = null
@@ -160,7 +162,13 @@ class MainViewModel @Inject constructor(
             )
         }
         val audioList = List(10) {
-            AudioEntity.createAudioEntity(sampleUri, audioCreateDate, "録音データ${it}", audioDuration)
+            AudioEntity.createAudioEntity(
+                sampleUri,
+                audioCreateDate,
+                "録音データ${it}",
+                audioDuration,
+                null
+            )
         }
         viewModelScope.launch(Dispatchers.IO) {
             repository.localDataSource.insertAudioList(audioList)
@@ -181,39 +189,31 @@ class MainViewModel @Inject constructor(
 
     /** Location */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var savedLocation: List<Location>
-
-    private val isSavingLocation = MutableStateFlow(false)
+    private val savedLocationList = mutableListOf<Location>()
+    private val savedGpsDataList = mutableListOf<GpsData>()
 
     private val locationCallback = object : LocationCallback() {
-        val locationsString = StringBuilder()
-        override fun onLocationResult(locationResult: LocationResult) {
-            locationsString.append(
-                "記録時間:" + locationResult.lastLocation.time.toString() +
-                        "\nlongitude:" + locationResult.lastLocation.longitude.toString() +
-                        "\nlatitude:" + locationResult.lastLocation.latitude.toString() +
-                        "\nspeed:" + locationResult.lastLocation.speed.toString() +
-                        "\nbearing:" + locationResult.lastLocation.bearing.toString() +
-                        "\n"
-            )
+        val lastLocationFlow =
+            MutableSharedFlow<Location>(20, onBufferOverflow = BufferOverflow.SUSPEND)
 
-            if (isSavingLocation.value) {
-                savedLocation = locationResult.locations
-                savedLocation.forEach {
-                    locationsString.append(
-                        "記録時間:" + it.time.toString() +
-                                "\nlongitude:" + it.longitude.toString() +
-                                "\nlatitude:" + it.latitude.toString() +
-                                "\n"
-                    )
+        val jobAddCollection by lazy {
+            lastLocationFlow
+                .onEach {
+                    withContext(Dispatchers.IO) { savedLocationList.add(it) }
                 }
-//                binding.debugGpsLoc.text = locationsString
-                isSavingLocation.value = false
-            }
+                .launchIn(viewModelScope)
+        }
+
+        override fun onLocationResult(locationResult: LocationResult) {
+            /** LocationをsavedLocationListに格納するコルーチンを起動 */
+            jobAddCollection
+            lastLocationFlow.tryEmit(locationResult.lastLocation)
         }
     }
 
     fun startLocationUpdates() {
+        savedLocationList.clear()
+        savedGpsDataList.clear()
         val locationRequest = LocationRequest.create().apply {
             interval = 5000
             fastestInterval = 1000
@@ -233,19 +233,19 @@ class MainViewModel @Inject constructor(
         if (!isFineLocationGranted && !isCoarseLocationGranted) {
             throw CannotCollectGpsLocationException("FineLocation and CoarseLocation are not granted.")
         }
+        fusedLocationClient =
+            LocationServices.getFusedLocationProviderClient(getApplication() as Context)
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
     }
 
-    fun stopLocationUpdates() {
-        isSavingLocation.value = true
-        /** 取得した全ての位置情報を保存する */
-        viewModelScope.launch {
-            isSavingLocation.first { isSavingLocation ->
-                if (isSavingLocation) return@first false
-                fusedLocationClient.removeLocationUpdates(locationCallback)
-                return@first true
+    private fun stopLocationUpdates() {
+        savedLocationList.forEach { location ->
+            val gpsData = location.run {
+                GpsData(latitude, longitude, altitude, bearing, speed, time)
             }
+            savedGpsDataList.add(gpsData)
         }
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
 }

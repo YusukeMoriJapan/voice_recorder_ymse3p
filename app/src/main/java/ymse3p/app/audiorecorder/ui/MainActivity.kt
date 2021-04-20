@@ -2,7 +2,6 @@ package ymse3p.app.audiorecorder.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -13,15 +12,11 @@ import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
-import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
 import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
@@ -82,7 +77,6 @@ class MainActivity : AppCompatActivity() {
             if (mainViewModel.isRecording.value) {
                 try {
                     mainViewModel.stopRecording()
-                    mainViewModel.stopLocationUpdates()
                     Snackbar.make(
                         binding.mainActivitySnackBar, "録音を終了しました", Snackbar.LENGTH_SHORT
                     ).show()
