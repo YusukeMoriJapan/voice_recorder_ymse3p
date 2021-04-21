@@ -1,5 +1,9 @@
 package ymse3p.app.audiorecorder.models
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+
+@Parcelize
 data class GpsData(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
@@ -8,4 +12,4 @@ data class GpsData(
     val speed: Float = 0F,
     val time: Long = 0,
     val originalIndex: Int? = null,
-)
+):Parcelable

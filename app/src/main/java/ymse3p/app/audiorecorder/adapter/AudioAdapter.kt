@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.R
@@ -40,6 +40,9 @@ class AudioAdapter(
 
     /** 生成されたViewHolderを保持 */
     private val viewHolders = mutableListOf<MyViewHolder>()
+
+    /** ユーザーがシングルクリックした音源データ */
+    val selectedAudioEntity = MutableSharedFlow<AudioEntity>()
 
     /** Contextual Action Mode */
     private lateinit var mActionMode: ActionMode
@@ -114,9 +117,10 @@ class AudioAdapter(
         saveItemStateOnScroll(currentAudio, holder)
 
         holder.binding.audioRowLayout.setOnClickListener {
-            if (multiSelection) {
+            if (multiSelection)
                 applySelection(holder, currentAudio)
-            }
+            else
+                launch { selectedAudioEntity.emit(currentAudio) }
         }
         holder.binding.audioRowLayout.setOnLongClickListener {
             if (!multiSelection) {

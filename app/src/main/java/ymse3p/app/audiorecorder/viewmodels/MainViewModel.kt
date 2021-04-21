@@ -297,11 +297,13 @@ class MainViewModel @Inject constructor(
 
             is NetworkResult.Error -> {
                 /** 後日実装 */
-                throw IOException(networkResult.message)
+                return null
+//                throw IOException(networkResult.message)
             }
             is NetworkResult.Loading -> {
                 /** 後日実装 */
-                throw IOException(networkResult.message)
+                return null
+//                throw IOException(networkResult.message)
             }
         }
     }
@@ -333,7 +335,7 @@ class MainViewModel @Inject constructor(
                 return NetworkResult.Error("API Key Limited.")
             }
             response.body() == null || response.body()?.snappedPoints.isNullOrEmpty() -> {
-                Log.e("Retrofit", response.errorBody()!!.string())
+                Log.e("Retrofit", response.errorBody()?.string() ?: "")
                 return NetworkResult.Error("Points not found.")
             }
             response.isSuccessful -> {

@@ -16,9 +16,7 @@
             app:enterAnim="@anim/nav_up_enter_anim"
             app:exitAnim="@anim/nav_up_exit_anim"
             app:popEnterAnim="@anim/nav_up_pop_enter_anim"
-            app:popExitAnim="@anim/nav_up_pop_exit_anim"
-            app:popUpTo="@id/FirstFragment"
-            app:popUpToInclusive="false" />
+            app:popExitAnim="@anim/nav_up_pop_exit_anim" />
     </fragment>
     <dialog
         android:id="@+id/audioSaveBottomSheet"
@@ -36,7 +34,11 @@
         app:destination="@id/audioSaveBottomSheet" />
     <fragment
         android:id="@+id/mapsFragment"
-        android:name="ymse3p.app.audiorecorder.MapsFragment"
+        android:name="ymse3p.app.audiorecorder.ui.fragments.MapsFragment"
         android:label="fragment_maps"
-        tools:layout="@layout/fragment_maps" />
+        tools:layout="@layout/fragment_maps">
+        <argument
+            android:name="audioEntity"
+            app:argType="ymse3p.app.audiorecorder.data.database.entities.AudioEntity" />
+    </fragment>
 </navigation>
