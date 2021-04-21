@@ -7,4 +7,5 @@ data class GpsData(
     val bearing: Float = 0F,
     val speed: Float = 0F,
     val time: Long = 0,
+    val originalIndex: Int? = null,
 )

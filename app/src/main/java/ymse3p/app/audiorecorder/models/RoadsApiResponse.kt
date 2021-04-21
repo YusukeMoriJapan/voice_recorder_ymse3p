@@ -6,7 +6,7 @@ data class RoadsApiResponse(
 
        data class SnappedPoint(
            val location: Location,
-           val originalIndex: Int,
+           val originalIndex: Int?,
            val placeId: String
            )
 

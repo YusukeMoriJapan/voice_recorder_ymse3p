@@ -18,14 +18,17 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
 import ymse3p.app.audiorecorder.data.database.DataStoreRepository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.models.GpsData
+import ymse3p.app.audiorecorder.models.RoadsApiResponse
 import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
 import ymse3p.app.audiorecorder.util.CannotSaveAudioException
 import ymse3p.app.audiorecorder.util.CannotStartRecordingException
+import ymse3p.app.audiorecorder.util.NetworkResult
 import java.io.File
 import java.io.IOException
 import java.lang.IllegalStateException
@@ -122,16 +125,21 @@ class MainViewModel @Inject constructor(
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
 
-        val audioEntity =
-            AudioEntity.createAudioEntity(
-                Uri.fromFile(currentOutputFileName),
-                currentAudioCreatedDate ?: Calendar.getInstance(),
-                audioTitle,
-                audioDuration,
-                savedGpsDataList
-            )
-        repository.localDataSource.insertAudio(audioEntity)
-        currentOutputFileName = null
+        isRemoteLoading.first { isLoading ->
+            if (isLoading) return@first false
+
+            val audioEntity =
+                AudioEntity.createAudioEntity(
+                    Uri.fromFile(currentOutputFileName),
+                    currentAudioCreatedDate ?: Calendar.getInstance(),
+                    audioTitle,
+                    audioDuration,
+                    savedGpsDataList
+                )
+            repository.localDataSource.insertAudio(audioEntity)
+            currentOutputFileName = null
+            return@first true
+        }
     }
 
     fun deleteAudio(audioEntity: AudioEntity) =
@@ -190,7 +198,8 @@ class MainViewModel @Inject constructor(
     /** Location */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val savedLocationList = mutableListOf<Location>()
-    private val savedGpsDataList = mutableListOf<GpsData>()
+    private var savedGpsDataList = mutableListOf<GpsData>()
+    private val isRemoteLoading = MutableStateFlow(false)
 
     private val locationCallback = object : LocationCallback() {
         val lastLocationFlow =
@@ -239,13 +248,135 @@ class MainViewModel @Inject constructor(
     }
 
     private fun stopLocationUpdates() {
-        savedLocationList.forEach { location ->
-            val gpsData = location.run {
-                GpsData(latitude, longitude, altitude, bearing, speed, time)
-            }
-            savedGpsDataList.add(gpsData)
+        /** Has Internet Connection */
+        viewModelScope.launch(Dispatchers.IO) {
+            isRemoteLoading.value = true
+            val snappedGpsDataList = getSnappedPoints()
+
+            if (snappedGpsDataList == null)
+                saveOriginalGpsDataList()
+            else
+                saveSnappedGpsDataList(snappedGpsDataList)
+            isRemoteLoading.value = false
         }
+
+        /** No Internet Connection */
+//        saveOriginalGpsDataList()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
+    private fun saveSnappedGpsDataList(snappedGpsDataList: MutableList<GpsData>) {
+        savedGpsDataList = snappedGpsDataList
+    }
+
+
+    private fun saveOriginalGpsDataList() {
+        savedLocationList.forEachIndexed { index, location ->
+            val gpsData = location.run {
+                GpsData(latitude, longitude, altitude, bearing, speed, time, index)
+            }
+            savedGpsDataList.add(gpsData)
+        }
+    }
+
+    private suspend fun getSnappedPoints(): MutableList<GpsData>? {
+
+        /** Roads APIから補正データを取得 */
+        val retrofitResponse = repository.remoteDataSource.getSnappedPoints(generatePathQuery())
+
+        val networkResult: NetworkResult<RoadsApiResponse> =
+            handleRetrofitResponse(retrofitResponse)
+
+        when (networkResult) {
+            is NetworkResult.Success -> {
+                val responseBodyNullSafe: RoadsApiResponse =
+                    networkResult.data ?: return null
+
+                return responseToGpsDataList(responseBodyNullSafe)
+            }
+
+            is NetworkResult.Error -> {
+                /** 後日実装 */
+                throw IOException(networkResult.message)
+            }
+            is NetworkResult.Loading -> {
+                /** 後日実装 */
+                throw IOException(networkResult.message)
+            }
+        }
+    }
+
+
+    private fun generatePathQuery(): String {
+        val query = StringBuilder()
+
+        val listSize = savedLocationList.size
+        savedLocationList.forEachIndexed { index, location ->
+            val latitude = location.latitude
+            val longitude = location.longitude
+
+            if (index == listSize - 1)
+                query.append("$latitude,$longitude")
+            else
+                query.append("$latitude,$longitude|")
+        }
+
+        return query.toString()
+    }
+
+    private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
+        when {
+            response.message().toString().contains("timeout") -> {
+                return NetworkResult.Error("Timeout")
+            }
+            response.code() == 402 -> {
+                return NetworkResult.Error("API Key Limited.")
+            }
+            response.body() == null || response.body()?.snappedPoints.isNullOrEmpty() -> {
+                Log.e("Retrofit", response.errorBody()!!.string())
+                return NetworkResult.Error("Points not found.")
+            }
+            response.isSuccessful -> {
+                val snappedPoints = response.body()
+                    ?: return NetworkResult.Error("Points not found.")
+
+                return NetworkResult.Success(snappedPoints)
+            }
+            else -> {
+                return NetworkResult.Error(response.message())
+            }
+
+        }
+    }
+
+    private fun responseToGpsDataList(responseBody: RoadsApiResponse): MutableList<GpsData> {
+        val gpsDataList = mutableListOf<GpsData>()
+
+        responseBody.snappedPoints.forEach { snappedPoint ->
+            val snappedLat = snappedPoint.location.latitude
+            val snappedLng = snappedPoint.location.longitude
+            val originalIndex: Int? = snappedPoint.originalIndex
+
+            if (originalIndex !== null) {
+                val originalAlt = savedLocationList[originalIndex].altitude
+                val originalBear = savedLocationList[originalIndex].bearing
+                val originalSpeed = savedLocationList[originalIndex].speed
+                val originalTime = savedLocationList[originalIndex].time
+                gpsDataList.add(
+                    GpsData(
+                        latitude = snappedLat,
+                        longitude = snappedLng,
+                        altitude = originalAlt,
+                        bearing = originalBear,
+                        speed = originalSpeed,
+                        time = originalTime,
+                        originalIndex = originalIndex
+                    )
+                )
+            } else
+                gpsDataList.add(GpsData(latitude = snappedLat, longitude = snappedLng))
+        }
+
+        return gpsDataList
+    }
 }

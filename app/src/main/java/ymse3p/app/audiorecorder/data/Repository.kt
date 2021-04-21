@@ -4,6 +4,7 @@ import javax.inject.Singleton
 
 @Singleton
 class Repository @Inject constructor(
+    val remoteDataSource: RemoteDataSource,
     val localDataSource: LocalDataSource
 ) {
 }

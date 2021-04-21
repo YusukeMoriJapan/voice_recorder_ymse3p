@@ -63,28 +63,28 @@ class MapsFragment : Fragment() {
         mapFragment.getMapAsync(callback)
 
         /** Roads APIから補正データを取得 */
-        lifecycleScope.launchWhenCreated {
-            val retrofitResponse = roadsApi.getSnappedPoints(generatePathQuery())
-            val networkResult: NetworkResult<RoadsApiResponse> =
-                handleRetrofitResponse(retrofitResponse)
-
-            when (networkResult) {
-                is NetworkResult.Success -> {
-                    val responseBodyNullSafe: RoadsApiResponse =
-                        networkResult.data ?: return@launchWhenCreated
-
-                    val gpsDataList = responseToGpsDataList(responseBodyNullSafe)
-                    drawPolyLine(gpsDataList)
-                }
-
-                is NetworkResult.Error -> {
-                    /** 後日実装 */
-                }
-                is NetworkResult.Loading -> {
-                    /** 後日実装 */
-                }
-            }
-        }
+//        lifecycleScope.launchWhenCreated {
+//            val retrofitResponse = roadsApi.getSnappedPoints(generatePathQuery())
+//            val networkResult: NetworkResult<RoadsApiResponse> =
+//                handleRetrofitResponse(retrofitResponse)
+//
+//            when (networkResult) {
+//                is NetworkResult.Success -> {
+//                    val responseBodyNullSafe: RoadsApiResponse =
+//                        networkResult.data ?: return@launchWhenCreated
+//
+//                    val gpsDataList = responseToGpsDataList(responseBodyNullSafe)
+//                    drawPolyLine(gpsDataList)
+//                }
+//
+//                is NetworkResult.Error -> {
+//                    /** 後日実装 */
+//                }
+//                is NetworkResult.Loading -> {
+//                    /** 後日実装 */
+//                }
+//            }
+//        }
     }
 
     private fun drawPolyLine(gpsDataList: List<GpsData>) {
@@ -108,50 +108,50 @@ class MapsFragment : Fragment() {
         return latLngList
     }
 
-    private fun responseToGpsDataList(responseBody: RoadsApiResponse): List<GpsData> {
-        val gpsDataList = mutableListOf<GpsData>()
-
-        responseBody.snappedPoints.forEach { snappedPoint ->
-            val lat = snappedPoint.location.latitude
-            val lng = snappedPoint.location.longitude
-            gpsDataList.add(GpsData(latitude = lat, longitude = lng))
-        }
-
-        return gpsDataList
-    }
-
-
-    private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
-        when {
-            response.message().toString().contains("timeout") -> {
-                return NetworkResult.Error("Timeout")
-            }
-            response.code() == 402 -> {
-                return NetworkResult.Error("API Key Limited.")
-            }
-            response.body() == null || response.body()?.snappedPoints.isNullOrEmpty() -> {
-                Log.e("Retrofit", response.errorBody()!!.string())
-                return NetworkResult.Error("Points not found.")
-            }
-            response.isSuccessful -> {
-                val snappedPoints = response.body()
-                    ?: return NetworkResult.Error("Points not found.")
-
-                return NetworkResult.Success(snappedPoints)
-            }
-            else -> {
-                return NetworkResult.Error(response.message())
-            }
-
-        }
-    }
-
-    private fun generatePathQuery(): String {
-        val query = StringBuilder()
-        val latitude = -35.2784167
-        val longitude = 149.12958
-        query.append("$latitude,$longitude|")
-//        return query
-        return "-35.27801,149.12958|-35.28032,149.12907|-35.28099,149.12929|-35.28144,149.12984|-35.28194,149.13003|-35.28282,149.12956|-35.28302,149.12881|-35.28473,149.12836"
-    }
+//    private fun responseToGpsDataList(responseBody: RoadsApiResponse): List<GpsData> {
+//        val gpsDataList = mutableListOf<GpsData>()
+//
+//        responseBody.snappedPoints.forEach { snappedPoint ->
+//            val lat = snappedPoint.location.latitude
+//            val lng = snappedPoint.location.longitude
+//            gpsDataList.add(GpsData(latitude = lat, longitude = lng))
+//        }
+//
+//        return gpsDataList
+//    }
+//
+//
+//    private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
+//        when {
+//            response.message().toString().contains("timeout") -> {
+//                return NetworkResult.Error("Timeout")
+//            }
+//            response.code() == 402 -> {
+//                return NetworkResult.Error("API Key Limited.")
+//            }
+//            response.body() == null || response.body()?.snappedPoints.isNullOrEmpty() -> {
+//                Log.e("Retrofit", response.errorBody()!!.string())
+//                return NetworkResult.Error("Points not found.")
+//            }
+//            response.isSuccessful -> {
+//                val snappedPoints = response.body()
+//                    ?: return NetworkResult.Error("Points not found.")
+//
+//                return NetworkResult.Success(snappedPoints)
+//            }
+//            else -> {
+//                return NetworkResult.Error(response.message())
+//            }
+//
+//        }
+//    }
+//
+//    private fun generatePathQuery(): String {
+//        val query = StringBuilder()
+//        val latitude = -35.2784167
+//        val longitude = 149.12958
+//        query.append("$latitude,$longitude|")
+////        return query
+//        return "-35.27801,149.12958|-35.28032,149.12907|-35.28099,149.12929|-35.28144,149.12984|-35.28194,149.13003|-35.28282,149.12956|-35.28302,149.12881|-35.28473,149.12836"
+//    }
 }

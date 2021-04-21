@@ -1,16 +1,14 @@
 package ymse3p.app.audiorecorder.di
 
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import ymse3p.app.audiorecorder.BuildConfig
 import ymse3p.app.audiorecorder.data.network.RoadsApi
-import ymse3p.app.audiorecorder.util.Constants.Companion.API_KEY
 import ymse3p.app.audiorecorder.util.Constants.Companion.BASE_URL
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -32,7 +30,8 @@ class NetworkModule {
     @Provides
     @Singleton
     fun provideConverterFactory(): GsonConverterFactory {
-        return GsonConverterFactory.create()
+        val gSon = GsonBuilder().serializeNulls().create()
+        return GsonConverterFactory.create(gSon)
     }
 
     @Provides
