@@ -175,13 +175,16 @@ class MainViewModel @Inject constructor(
                     e.message.orEmpty() + "/n" + e.stackTraceToString()
                 )
             }
+
+            val sampleJson = sampleJsonToGpsList()
+
             val audioList = List(10) {
                 AudioEntity.createAudioEntity(
                     sampleUri,
                     audioCreateDate,
                     "録音データ${it}",
                     audioDuration,
-                    sampleJsonToGpsList()
+                    sampleJson
                 )
             }
             repository.localDataSource.insertAudioList(audioList)
