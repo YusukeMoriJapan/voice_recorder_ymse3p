@@ -7,11 +7,14 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.*
 import com.google.android.gms.location.*
+import com.google.gson.GsonBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
@@ -25,12 +28,8 @@ import ymse3p.app.audiorecorder.data.database.DataStoreRepository
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.models.RoadsApiResponse
-import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
-import ymse3p.app.audiorecorder.util.CannotSaveAudioException
-import ymse3p.app.audiorecorder.util.CannotStartRecordingException
-import ymse3p.app.audiorecorder.util.NetworkResult
-import java.io.File
-import java.io.IOException
+import ymse3p.app.audiorecorder.util.*
+import java.io.*
 import java.lang.IllegalStateException
 import java.util.*
 import javax.inject.Inject
@@ -54,6 +53,9 @@ class MainViewModel @Inject constructor(
     val isRecording: StateFlow<Boolean> = _isRecording
     private var currentOutputFileName: File? = null
     private var currentAudioCreatedDate: Calendar? = null
+
+    private val _isInserting = MutableStateFlow(false)
+    val isInserting: StateFlow<Boolean> = _isInserting
 
 
     /** 録音処理(Media Recorderに対する処理) */
@@ -116,6 +118,7 @@ class MainViewModel @Inject constructor(
     fun insertAudio(
         audioTitle: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
+        _isInserting.value = true
         val audioDuration = try {
             MediaMetadataRetriever().run {
                 setDataSource(currentOutputFileName?.path)
@@ -140,6 +143,7 @@ class MainViewModel @Inject constructor(
             currentOutputFileName = null
             return@first true
         }
+        _isInserting.value = false
     }
 
     fun deleteAudio(audioEntity: AudioEntity) =
@@ -155,40 +159,42 @@ class MainViewModel @Inject constructor(
 
     /** サンプルデータに対する操作　*/
     fun insertSampleAudio() {
-        val sampleUri =
-            Uri.parse("android.resource://${this.getApplication<Application>().packageName}/" + R.raw.famipop3)
-        val audioCreateDate = Calendar.getInstance()
-        val audioDuration = try {
-            MediaMetadataRetriever().run {
-                setDataSource(getApplication(), sampleUri)
-                extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            }?.toInt() ?: 0
-        } catch (e: NumberFormatException) {
-            Log.e(
-                "MediaMetadataRetriever",
-                e.message.orEmpty() + "/n" + e.stackTraceToString()
-            )
-        }
-        val audioList = List(10) {
-            AudioEntity.createAudioEntity(
-                sampleUri,
-                audioCreateDate,
-                "録音データ${it}",
-                audioDuration,
-                null
-            )
-        }
         viewModelScope.launch(Dispatchers.IO) {
+            _isInserting.value = true
+            val sampleUri =
+                Uri.parse("android.resource://${this@MainViewModel.getApplication<Application>().packageName}/" + R.raw.sample_audio)
+            val audioCreateDate = Calendar.getInstance().apply { time = Date(0) }
+            val audioDuration = try {
+                MediaMetadataRetriever().run {
+                    setDataSource(getApplication(), sampleUri)
+                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                }?.toInt() ?: 0
+            } catch (e: NumberFormatException) {
+                Log.e(
+                    "MediaMetadataRetriever",
+                    e.message.orEmpty() + "/n" + e.stackTraceToString()
+                )
+            }
+            val audioList = List(10) {
+                AudioEntity.createAudioEntity(
+                    sampleUri,
+                    audioCreateDate,
+                    "録音データ${it}",
+                    audioDuration,
+                    sampleJsonToGpsList()
+                )
+            }
             repository.localDataSource.insertAudioList(audioList)
+            _isInserting.value = false
         }
+
+
     }
 
     fun deleteAllSampleAudio() {
         viewModelScope.launch(Dispatchers.IO) { repository.localDataSource.deleteAllSampleAudio() }
     }
 
-
-    /** ViewModelの状態遷移に紐づく処理 */
     override fun onCleared() {
         super.onCleared()
         audioRecorder.release()
@@ -224,8 +230,8 @@ class MainViewModel @Inject constructor(
         savedLocationList.clear()
         savedGpsDataList.clear()
         val locationRequest = LocationRequest.create().apply {
-            interval = 5000
-            fastestInterval = 1000
+            interval = 3000
+            fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
@@ -248,21 +254,19 @@ class MainViewModel @Inject constructor(
     }
 
     private fun stopLocationUpdates() {
-        /** Has Internet Connection */
+
         viewModelScope.launch(Dispatchers.IO) {
-            isRemoteLoading.value = true
-            val snappedGpsDataList = getSnappedPoints()
-
-            if (snappedGpsDataList == null)
+            if (hasInternetConnection()) {
+                isRemoteLoading.value = true
+                val snappedGpsDataList = getSnappedPoints()
+                if (snappedGpsDataList == null) saveOriginalGpsDataList()
+                else saveSnappedGpsDataList(snappedGpsDataList)
+                isRemoteLoading.value = false
+            } else {
                 saveOriginalGpsDataList()
-            else
-                saveSnappedGpsDataList(snappedGpsDataList)
-            isRemoteLoading.value = false
+            }
+            fusedLocationClient.removeLocationUpdates(locationCallback)
         }
-
-        /** No Internet Connection */
-//        saveOriginalGpsDataList()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     private fun saveSnappedGpsDataList(snappedGpsDataList: MutableList<GpsData>) {
@@ -272,15 +276,23 @@ class MainViewModel @Inject constructor(
 
     private fun saveOriginalGpsDataList() {
         savedLocationList.forEachIndexed { index, location ->
-            val gpsData = location.run {
-                GpsData(latitude, longitude, altitude, bearing, speed, time, index)
-            }
+            val gpsData =
+                location.run {
+                    GpsData(
+                        latitude,
+                        longitude,
+                        altitude,
+                        bearing,
+                        speed,
+                        time,
+                        index
+                    )
+                }
             savedGpsDataList.add(gpsData)
         }
     }
 
     private suspend fun getSnappedPoints(): MutableList<GpsData>? {
-
         /** Roads APIから補正データを取得 */
         val retrofitResponse = repository.remoteDataSource.getSnappedPoints(generatePathQuery())
 
@@ -289,21 +301,20 @@ class MainViewModel @Inject constructor(
 
         when (networkResult) {
             is NetworkResult.Success -> {
-                val responseBodyNullSafe: RoadsApiResponse =
-                    networkResult.data ?: return null
-
+                val responseBodyNullSafe: RoadsApiResponse = networkResult.data ?: return null
                 return responseToGpsDataList(responseBodyNullSafe)
             }
 
             is NetworkResult.Error -> {
-                /** 後日実装 */
+                Log.e("Roads API Call", networkResult.message.orEmpty())
                 return null
-//                throw IOException(networkResult.message)
+
             }
+
+            // 修正要　読み込み中状態を返すロジックは現状なし
             is NetworkResult.Loading -> {
-                /** 後日実装 */
+                Log.d("Roads API Call", "network loading...")
                 return null
-//                throw IOException(networkResult.message)
             }
         }
     }
@@ -335,7 +346,7 @@ class MainViewModel @Inject constructor(
                 return NetworkResult.Error("API Key Limited.")
             }
             response.body() == null || response.body()?.snappedPoints.isNullOrEmpty() -> {
-                Log.e("Retrofit", response.errorBody()?.string() ?: "")
+                Log.e("Roads API Call", response.errorBody()?.string().orEmpty())
                 return NetworkResult.Error("Points not found.")
             }
             response.isSuccessful -> {
@@ -375,6 +386,53 @@ class MainViewModel @Inject constructor(
                         originalIndex = originalIndex
                     )
                 )
+            } else
+                gpsDataList.add(GpsData(latitude = snappedLat, longitude = snappedLng))
+        }
+
+        return gpsDataList
+    }
+
+    private fun hasInternetConnection(): Boolean {
+        val connectivityManager = getApplication<Application>().getSystemService(
+            Context.CONNECTIVITY_SERVICE
+        ) as ConnectivityManager
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val capabilities =
+            connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        return when {
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
+        }
+    }
+
+    private fun sampleJsonToGpsList(): List<GpsData> {
+        val sampleJson = getSampleJson(getApplication())
+
+        val gSon = GsonBuilder().serializeNulls().create()
+        val sampleResponse: RoadsApiResponse =
+            gSon.fromJson(sampleJson, RoadsApiResponse::class.java)
+
+        val gpsDataList = mutableListOf<GpsData>()
+
+        var sampleTimeMs: Long = 0
+        sampleResponse.snappedPoints.forEach { snappedPoint ->
+            val snappedLat = snappedPoint.location.latitude
+            val snappedLng = snappedPoint.location.longitude
+            val originalIndex: Int? = snappedPoint.originalIndex
+
+            if (originalIndex !== null) {
+                gpsDataList.add(
+                    GpsData(
+                        latitude = snappedLat,
+                        longitude = snappedLng,
+                        time = sampleTimeMs,
+                        originalIndex = originalIndex
+                    )
+                )
+                sampleTimeMs += 1000
             } else
                 gpsDataList.add(GpsData(latitude = snappedLat, longitude = snappedLng))
         }

@@ -2,12 +2,14 @@ package ymse3p.app.audiorecorder.ui.fragments
 
 import androidx.fragment.app.Fragment
 import android.os.Bundle
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
@@ -35,6 +37,7 @@ class MapsFragment : Fragment() {
 
     private val args by navArgs<MapsFragmentArgs>()
     private lateinit var onViewCreatedJob: Job
+    private lateinit var onStartJob: Job
 
     private var currentMarker: Marker? = null
 
@@ -63,10 +66,24 @@ class MapsFragment : Fragment() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        onStartJob = lifecycleScope.launchWhenStarted {
+            playbackViewModel.playbackState.collect {
+                if (it?.state == PlaybackStateCompat.STATE_STOPPED &&
+                    findNavController().currentDestination?.id == R.id.mapsFragment)
+                    findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToFirstFragment())
+
+            }
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         if (::onViewCreatedJob.isInitialized)
             onViewCreatedJob.cancel()
+        if (::onStartJob.isInitialized)
+            onStartJob.cancel()
     }
 
     private fun calcNearestGpsIndex(playbackState: PlaybackStateCompat?): Int? {
@@ -111,11 +128,10 @@ class MapsFragment : Fragment() {
     private fun drawPolyLine(googleMap: GoogleMap, gpsDataList: List<GpsData>) {
         val latLngList = gpsDataToLatLng(gpsDataList)
         googleMap.addPolyline(PolylineOptions().addAll(latLngList))
-        googleMap.moveCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                latLngList.firstOrNull() ?: LatLng(0.0, 0.0), 15f
-            )
-        )
+
+        val startPoint = latLngList.firstOrNull()
+        if (startPoint !== null)
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15f))
     }
 
     private fun gpsDataToLatLng(gpsDataList: List<GpsData>): List<LatLng> {

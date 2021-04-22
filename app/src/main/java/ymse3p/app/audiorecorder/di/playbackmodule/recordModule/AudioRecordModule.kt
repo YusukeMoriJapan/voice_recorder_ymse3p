@@ -1,12 +1,10 @@
 package ymse3p.app.audiorecorder.di.playbackmodule.recordModule
 
-import android.content.Context
 import android.media.MediaRecorder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ViewModelScoped
 
 @Module

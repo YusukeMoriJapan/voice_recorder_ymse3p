@@ -64,9 +64,13 @@
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/main_activity_snack_bar"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="@+id/plaback_shadow"
+            app:layout_constraintEnd_toStartOf="@+id/mic"
             app:layout_constraintStart_toStartOf="parent" />
 
         <LinearLayout
@@ -154,16 +158,6 @@
 
             </LinearLayout>
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/debugGpsLoc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TextView"
-            app:layout_constraintBottom_toTopOf="@+id/plaback_shadow"
-            app:layout_constraintEnd_toEndOf="@+id/include"
-            app:layout_constraintStart_toStartOf="@+id/include"
-            app:layout_constraintTop_toTopOf="@+id/include" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
@@ -35,6 +36,8 @@ class AudioListFragment : Fragment() {
         )
     }
 
+    private lateinit var onCreateViewJob: Job
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         /** 「ユーザーが選択した音源」の位置情報を表示するフラグメントに遷移 */
@@ -47,7 +50,6 @@ class AudioListFragment : Fragment() {
                 }
             }
         }
-
     }
 
     override fun onCreateView(
@@ -58,6 +60,13 @@ class AudioListFragment : Fragment() {
         setupRecyclerView()
         readDatabase()
 
+        onCreateViewJob = lifecycleScope.launchWhenCreated {
+            mainViewModel.isInserting.collect { isInserting ->
+                if (isInserting) showShimmerEffect()
+                else hideShimmerEffect()
+            }
+        }
+
         return binding.root
     }
 
@@ -67,6 +76,7 @@ class AudioListFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (::onCreateViewJob.isInitialized) onCreateViewJob.cancel()
         mAdapter.clearContextualActionMode()
         _binding = null
     }
