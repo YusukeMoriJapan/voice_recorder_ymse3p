@@ -349,12 +349,13 @@ class MainViewModel @Inject constructor(
                     }
             }
 
-        val foo = responseGpsDataList.mapIndexed { index, gpsList ->
-            gpsList
-                ?: run { return@mapIndexed locationListToGasDataList(combinedOriginalLocList[index]) }
+        val combinedGpsList: List<List<GpsData>> =
+            responseGpsDataList.mapIndexed { index, gpsList ->
+                gpsList
+                    ?: run { return@mapIndexed locationListToGasDataList(combinedOriginalLocList[index]) }
 
-            if (index == 0) return@mapIndexed gpsList
-            else {
+                if (index == 0) return@mapIndexed gpsList
+
                 val reducedGpsList: MutableList<GpsData> = mutableListOf()
                 var passedOverlap = false
                 gpsList.forEach { gpsData ->
@@ -368,6 +369,11 @@ class MainViewModel @Inject constructor(
                     if (passedOverlap) reducedGpsList.add(gpsData)
                 }
                 return@mapIndexed reducedGpsList
+            }
+
+        val oneByOneGpsList: List<GpsData> = buildList {
+            combinedGpsList.forEach { gpsList ->
+                gpsList.forEach { gpsData -> this.add(gpsData) }
             }
         }
 
