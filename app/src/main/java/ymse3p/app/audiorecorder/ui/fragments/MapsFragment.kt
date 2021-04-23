@@ -71,7 +71,8 @@ class MapsFragment : Fragment() {
         onStartJob = lifecycleScope.launchWhenStarted {
             playbackViewModel.playbackState.collect {
                 if (it?.state == PlaybackStateCompat.STATE_STOPPED &&
-                    findNavController().currentDestination?.id == R.id.mapsFragment)
+                    findNavController().currentDestination?.id == R.id.mapsFragment
+                )
                     findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToFirstFragment())
 
             }
@@ -143,6 +144,6 @@ class MapsFragment : Fragment() {
     }
 
     private suspend fun SupportMapFragment.getMapSuspend(): GoogleMap =
-        suspendCoroutine { getMapAsync { googleMap -> it.resume(googleMap) } }
+        suspendCoroutine { continuation -> getMapAsync { googleMap -> continuation.resume(googleMap) } }
 
 }

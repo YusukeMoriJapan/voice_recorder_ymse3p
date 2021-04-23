@@ -16,11 +16,9 @@ import androidx.lifecycle.*
 import com.google.android.gms.location.*
 import com.google.gson.GsonBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.Response
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
@@ -216,9 +214,7 @@ class MainViewModel @Inject constructor(
 
         val jobAddCollection by lazy {
             lastLocationFlow
-                .onEach {
-                    withContext(Dispatchers.IO) { savedLocationList.add(it) }
-                }
+                .onEach { withContext(Dispatchers.IO) { savedLocationList.add(it) } }
                 .launchIn(viewModelScope)
         }
 
@@ -295,7 +291,110 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private fun locationListToGasDataList(locationList: List<Location>): List<GpsData> {
+        return locationList.mapIndexed { index, location ->
+            location.run { GpsData(latitude, longitude, altitude, bearing, speed, time, index) }
+        }
+    }
+
     private suspend fun getSnappedPoints(): MutableList<GpsData>? {
+        /** 進行中 */
+        val combinedOriginalLocList = mutableListOf<List<Location>>()
+        var offset = 0
+        while (offset < savedLocationList.size) {
+            if (offset > 0) offset -= 5
+            val lowerBound = offset
+            val upperBound = (offset + 100).coerceAtMost(savedLocationList.size)
+
+            val quota = savedLocationList.subList(lowerBound, upperBound)
+
+            combinedOriginalLocList.add(quota)
+            offset = upperBound
+        }
+
+
+        val responseGpsDataList: List<MutableList<GpsData>?> =
+            coroutineScope {
+                combinedOriginalLocList
+                    .map { locationList ->
+                        async(Dispatchers.IO) {
+                            repository.remoteDataSource.getSnappedPoints(
+                                generatePathQueryQuota(
+                                    locationList
+                                )
+                            )
+                        }
+                    }
+                    .map { deferred -> deferred.await() }
+                    .map { retrofitResponse -> handleRetrofitResponse(retrofitResponse) }
+                    .map { networkResult ->
+                        when (networkResult) {
+                            is NetworkResult.Success -> {
+                                if (networkResult.data == null) null
+                                else responseToGpsDataList(networkResult.data)
+                            }
+
+                            is NetworkResult.Error -> {
+                                Log.e("Roads API Call", networkResult.message.orEmpty())
+                                null
+
+                            }
+
+                            // 修正要　読み込み中状態を返すロジックは現状なし
+                            is NetworkResult.Loading -> {
+                                Log.d("Roads API Call", "network loading...")
+                                null
+                            }
+                        }
+                    }
+            }
+
+        val foo = responseGpsDataList.mapIndexed { index, gpsList ->
+            gpsList
+                ?: run { return@mapIndexed locationListToGasDataList(combinedOriginalLocList[index]) }
+
+            if (index == 0) return@mapIndexed gpsList
+            else {
+                val reducedGpsList: MutableList<GpsData> = mutableListOf()
+                var passedOverlap = false
+                gpsList.forEach { gpsData ->
+                    val safeOriginalIndex = gpsData.originalIndex
+                        ?: run {
+                            if (passedOverlap) reducedGpsList.add(gpsData)
+                            return@forEach
+                        }
+
+                    if (safeOriginalIndex >= 5 - 1) passedOverlap = true
+                    if (passedOverlap) reducedGpsList.add(gpsData)
+                }
+                return@mapIndexed reducedGpsList
+            }
+        }
+
+
+//        /** ガイドのほうのコード */
+//        val snappedPoints = mutableListOf<GpsData>()
+//        var offset = 0
+//        while (offset < savedLocationList.size) {
+//            if (offset > 0) offset -= 5
+//            val lowerBound = offset
+//            val upperBound = (offset + 100).coerceAtMost(savedLocationList.size)
+//
+//            val page = savedLocationList.subList(lowerBound, upperBound).toList()
+//
+//            val retroRes: Response<RoadsApiResponse> =
+//                repository.remoteDataSource.getSnappedPoints(generatePathQueryQuota(page))
+//
+//            var passedOverlap = false
+//            retroRes.body()?.snappedPoints?.forEach { point ->
+//                if (offset == 0 || point.originalIndex!! >= 5 - 1)
+//                    passedOverlap = true
+//                if (passedOverlap)
+//                    snappedPoints.add(point)
+//            }
+//            offset = upperBound
+//        }
+
         /** Roads APIから補正データを取得 */
         val retrofitResponse = repository.remoteDataSource.getSnappedPoints(generatePathQuery())
 
@@ -320,6 +419,23 @@ class MainViewModel @Inject constructor(
                 return null
             }
         }
+    }
+
+    private fun generatePathQueryQuota(page: List<Location>): String {
+        val query = StringBuilder()
+
+        val listSize = page.size
+        savedLocationList.forEachIndexed { index, location ->
+            val latitude = location.latitude
+            val longitude = location.longitude
+
+            if (index == listSize - 1)
+                query.append("$latitude,$longitude")
+            else
+                query.append("$latitude,$longitude|")
+        }
+
+        return query.toString()
     }
 
 
