@@ -257,9 +257,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             if (hasInternetConnection()) {
                 isRemoteLoading.value = true
-                val snappedGpsDataList = getSnappedPoints()
-                if (snappedGpsDataList == null) saveOriginalGpsDataList()
-                else saveSnappedGpsDataList(snappedGpsDataList)
+                saveSnappedGpsDataList(getSnappedPoints())
                 isRemoteLoading.value = false
             } else {
                 saveOriginalGpsDataList()
@@ -297,8 +295,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getSnappedPoints(): MutableList<GpsData>? {
-        /** 進行中 */
+    private suspend fun getSnappedPoints(): MutableList<GpsData> {
         val combinedOriginalLocList = mutableListOf<List<Location>>()
         var offset = 0
         while (offset < savedLocationList.size) {
@@ -371,60 +368,12 @@ class MainViewModel @Inject constructor(
                 return@mapIndexed reducedGpsList
             }
 
-        val oneByOneGpsList: List<GpsData> = buildList {
-            combinedGpsList.forEach { gpsList ->
-                gpsList.forEach { gpsData -> this.add(gpsData) }
-            }
+        val oneByOneGpsList = mutableListOf<GpsData>()
+        combinedGpsList.forEach { gpsList ->
+            gpsList.forEach { gpsData -> oneByOneGpsList.add(gpsData) }
         }
 
-
-//        /** ガイドのほうのコード */
-//        val snappedPoints = mutableListOf<GpsData>()
-//        var offset = 0
-//        while (offset < savedLocationList.size) {
-//            if (offset > 0) offset -= 5
-//            val lowerBound = offset
-//            val upperBound = (offset + 100).coerceAtMost(savedLocationList.size)
-//
-//            val page = savedLocationList.subList(lowerBound, upperBound).toList()
-//
-//            val retroRes: Response<RoadsApiResponse> =
-//                repository.remoteDataSource.getSnappedPoints(generatePathQueryQuota(page))
-//
-//            var passedOverlap = false
-//            retroRes.body()?.snappedPoints?.forEach { point ->
-//                if (offset == 0 || point.originalIndex!! >= 5 - 1)
-//                    passedOverlap = true
-//                if (passedOverlap)
-//                    snappedPoints.add(point)
-//            }
-//            offset = upperBound
-//        }
-
-        /** Roads APIから補正データを取得 */
-        val retrofitResponse = repository.remoteDataSource.getSnappedPoints(generatePathQuery())
-
-        val networkResult: NetworkResult<RoadsApiResponse> =
-            handleRetrofitResponse(retrofitResponse)
-
-        when (networkResult) {
-            is NetworkResult.Success -> {
-                val responseBodyNullSafe: RoadsApiResponse = networkResult.data ?: return null
-                return responseToGpsDataList(responseBodyNullSafe)
-            }
-
-            is NetworkResult.Error -> {
-                Log.e("Roads API Call", networkResult.message.orEmpty())
-                return null
-
-            }
-
-            // 修正要　読み込み中状態を返すロジックは現状なし
-            is NetworkResult.Loading -> {
-                Log.d("Roads API Call", "network loading...")
-                return null
-            }
-        }
+        return oneByOneGpsList
     }
 
     private fun generatePathQueryQuota(page: List<Location>): String {
@@ -444,23 +393,6 @@ class MainViewModel @Inject constructor(
         return query.toString()
     }
 
-
-    private fun generatePathQuery(): String {
-        val query = StringBuilder()
-
-        val listSize = savedLocationList.size
-        savedLocationList.forEachIndexed { index, location ->
-            val latitude = location.latitude
-            val longitude = location.longitude
-
-            if (index == listSize - 1)
-                query.append("$latitude,$longitude")
-            else
-                query.append("$latitude,$longitude|")
-        }
-
-        return query.toString()
-    }
 
     private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
         when {
