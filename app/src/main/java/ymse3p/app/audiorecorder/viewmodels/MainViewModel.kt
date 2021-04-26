@@ -27,6 +27,8 @@ import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.models.RoadsApiResponse
 import ymse3p.app.audiorecorder.util.*
+import ymse3p.app.audiorecorder.util.Constants.Companion.PAGE_SIZE_LIMIT
+import ymse3p.app.audiorecorder.util.Constants.Companion.PAGINATION_OVERLAP
 import java.io.*
 import java.lang.IllegalStateException
 import java.util.*
@@ -253,9 +255,8 @@ class MainViewModel @Inject constructor(
     }
 
     private fun stopLocationUpdates() {
-
         viewModelScope.launch(Dispatchers.IO) {
-            if (hasInternetConnection()) {
+            if (hasInternetConnection(getApplication())) {
                 isRemoteLoading.value = true
                 saveSnappedGpsDataList(getSnappedPoints())
                 isRemoteLoading.value = false
@@ -269,7 +270,6 @@ class MainViewModel @Inject constructor(
     private fun saveSnappedGpsDataList(snappedGpsDataList: MutableList<GpsData>) {
         savedGpsDataList = snappedGpsDataList
     }
-
 
     private fun saveOriginalGpsDataList() {
         savedLocationList.forEachIndexed { index, location ->
@@ -289,94 +289,33 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun locationListToGasDataList(locationList: List<Location>): List<GpsData> {
-        return locationList.mapIndexed { index, location ->
-            location.run { GpsData(latitude, longitude, altitude, bearing, speed, time, index) }
-        }
-    }
 
     private suspend fun getSnappedPoints(): MutableList<GpsData> {
-        val combinedOriginalLocList = mutableListOf<List<Location>>()
-        var offset = 0
-        while (offset < savedLocationList.size) {
-            if (offset > 0) offset -= 5
-            val lowerBound = offset
-            val upperBound = (offset + 100).coerceAtMost(savedLocationList.size)
+        val dividedOriginalLocList: List<List<Location>> =
+            savedLocationList.divideList(PAGINATION_OVERLAP, PAGE_SIZE_LIMIT)
 
-            val quota = savedLocationList.subList(lowerBound, upperBound)
-
-            combinedOriginalLocList.add(quota)
-            offset = upperBound
-        }
-
-
-        val responseGpsDataList: List<MutableList<GpsData>?> =
-            coroutineScope {
-                combinedOriginalLocList
-                    .map { locationList ->
-                        async(Dispatchers.IO) {
-                            repository.remoteDataSource.getSnappedPoints(
-                                generatePathQueryQuota(
-                                    locationList
-                                )
-                            )
-                        }
-                    }
-                    .map { deferred -> deferred.await() }
-                    .map { retrofitResponse -> handleRetrofitResponse(retrofitResponse) }
-                    .map { networkResult ->
-                        when (networkResult) {
-                            is NetworkResult.Success -> {
-                                if (networkResult.data == null) null
-                                else responseToGpsDataList(networkResult.data)
-                            }
-
-                            is NetworkResult.Error -> {
-                                Log.e("Roads API Call", networkResult.message.orEmpty())
-                                null
-
-                            }
-
-                            // 修正要　読み込み中状態を返すロジックは現状なし
-                            is NetworkResult.Loading -> {
-                                Log.d("Roads API Call", "network loading...")
-                                null
-                            }
-                        }
-                    }
-            }
+        val dividedSnappedGpsList: List<List<GpsData>?> =
+            dividedOriginalLocList
+                .map { locationList ->getSnappedPointsAsync(locationList) }
+                .map { deferred -> deferred.await() }
+                .map { retrofitResponse -> responseToNetworkResult(retrofitResponse) }
+                .map { networkResult -> netWorkResultToGpsList(networkResult) }
 
         val combinedGpsList: List<List<GpsData>> =
-            responseGpsDataList.mapIndexed { index, gpsList ->
-                gpsList
-                    ?: run { return@mapIndexed locationListToGasDataList(combinedOriginalLocList[index]) }
+            dividedSnappedGpsList.reduceOverlappedPoints(dividedOriginalLocList)
 
-                if (index == 0) return@mapIndexed gpsList
-
-                val reducedGpsList: MutableList<GpsData> = mutableListOf()
-                var passedOverlap = false
-                gpsList.forEach { gpsData ->
-                    val safeOriginalIndex = gpsData.originalIndex
-                        ?: run {
-                            if (passedOverlap) reducedGpsList.add(gpsData)
-                            return@forEach
-                        }
-
-                    if (safeOriginalIndex >= 5 - 1) passedOverlap = true
-                    if (passedOverlap) reducedGpsList.add(gpsData)
-                }
-                return@mapIndexed reducedGpsList
-            }
-
-        val oneByOneGpsList = mutableListOf<GpsData>()
-        combinedGpsList.forEach { gpsList ->
-            gpsList.forEach { gpsData -> oneByOneGpsList.add(gpsData) }
-        }
-
-        return oneByOneGpsList
+        return combinedGpsList.reAllocateOneByOne().toMutableList()
     }
 
-    private fun generatePathQueryQuota(page: List<Location>): String {
+    private suspend fun getSnappedPointsAsync(locationList: List<Location>): Deferred<Response<RoadsApiResponse>> =
+        coroutineScope {
+            async(Dispatchers.IO) {
+                val pathQuery: String = generatePathQuery(locationList)
+                repository.remoteDataSource.getSnappedPoints(pathQuery)
+            }
+        }
+
+    private fun generatePathQuery(page: List<Location>): String {
         val query = StringBuilder()
 
         val listSize = page.size
@@ -393,8 +332,7 @@ class MainViewModel @Inject constructor(
         return query.toString()
     }
 
-
-    private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
+    private fun responseToNetworkResult(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
         when {
             response.message().toString().contains("timeout") -> {
                 return NetworkResult.Error("Timeout")
@@ -416,6 +354,27 @@ class MainViewModel @Inject constructor(
                 return NetworkResult.Error(response.message())
             }
 
+        }
+    }
+
+    private fun netWorkResultToGpsList(networkResult: NetworkResult<RoadsApiResponse>): MutableList<GpsData>? {
+        when (networkResult) {
+            is NetworkResult.Success -> {
+                return if (networkResult.data == null) null
+                else responseToGpsDataList(networkResult.data)
+            }
+
+            is NetworkResult.Error -> {
+                Log.e("Roads API Call", networkResult.message.orEmpty())
+                return null
+
+            }
+
+            // 修正要　読み込み中状態を返すロジックは現状なし
+            is NetworkResult.Loading -> {
+                Log.d("Roads API Call", "network loading...")
+                return null
+            }
         }
     }
 
@@ -450,20 +409,28 @@ class MainViewModel @Inject constructor(
         return gpsDataList
     }
 
-    private fun hasInternetConnection(): Boolean {
-        val connectivityManager = getApplication<Application>().getSystemService(
-            Context.CONNECTIVITY_SERVICE
-        ) as ConnectivityManager
-        val activeNetwork = connectivityManager.activeNetwork ?: return false
-        val capabilities =
-            connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return when {
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
-            else -> false
+
+    private fun List<List<GpsData>?>.reduceOverlappedPoints(originalList: List<List<Location>>): List<List<GpsData>> =
+        this.mapIndexed { index, gpsList ->
+            gpsList
+                ?: run { return@mapIndexed originalList[index].locationListToGpsList() }
+
+            if (index == 0) return@mapIndexed gpsList
+
+            val reducedGpsList: MutableList<GpsData> = mutableListOf()
+            var passedOverlap = false
+            gpsList.forEach { gpsData ->
+                val safeOriginalIndex = gpsData.originalIndex
+                    ?: run {
+                        if (passedOverlap) reducedGpsList.add(gpsData)
+                        return@forEach
+                    }
+
+                if (safeOriginalIndex >= PAGINATION_OVERLAP - 1) passedOverlap = true
+                if (passedOverlap) reducedGpsList.add(gpsData)
+            }
+            return@mapIndexed reducedGpsList
         }
-    }
 
     private fun sampleJsonToGpsList(): List<GpsData> {
         val sampleJson = getSampleJson(getApplication())

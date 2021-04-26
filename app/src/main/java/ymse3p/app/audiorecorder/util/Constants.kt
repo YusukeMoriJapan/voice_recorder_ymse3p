@@ -29,5 +29,9 @@ class Constants {
 
         //Custom MediaDescription Key
         const val MEDIA_METADATA_QUEUE = "media_metadata_queue"
+
+        //Roads API request rule
+        const val PAGINATION_OVERLAP = 5
+        const val PAGE_SIZE_LIMIT = 100
     }
 }
