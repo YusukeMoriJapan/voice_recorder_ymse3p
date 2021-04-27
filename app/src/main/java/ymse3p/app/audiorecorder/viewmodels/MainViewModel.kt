@@ -7,8 +7,6 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -128,7 +126,7 @@ class MainViewModel @Inject constructor(
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
 
-        isRemoteLoading.first { isLoading ->
+        isSavingGpsList.first { isLoading ->
             if (isLoading) return@first false
 
             val audioEntity =
@@ -208,15 +206,22 @@ class MainViewModel @Inject constructor(
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val savedLocationList = mutableListOf<Location>()
     private var savedGpsDataList = mutableListOf<GpsData>()
-    private val isRemoteLoading = MutableStateFlow(false)
+    private val isSavingGpsList = MutableStateFlow(false)
 
     private val locationCallback = object : LocationCallback() {
         val lastLocationFlow =
             MutableSharedFlow<Location>(20, onBufferOverflow = BufferOverflow.SUSPEND)
 
         val jobAddCollection by lazy {
+            var counter = 0
             lastLocationFlow
-                .onEach { withContext(Dispatchers.IO) { savedLocationList.add(it) } }
+                .onEach {
+                    withContext(Dispatchers.IO) {
+                        savedLocationList.add(it)
+                        counter += 1
+                        Log.d("counter", counter.toString())
+                    }
+                }
                 .launchIn(viewModelScope)
         }
 
@@ -231,8 +236,8 @@ class MainViewModel @Inject constructor(
         savedLocationList.clear()
         savedGpsDataList.clear()
         val locationRequest = LocationRequest.create().apply {
-            interval = 3000
-            fastestInterval = 2000
+            interval = 1000
+            fastestInterval = 1000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
@@ -256,14 +261,14 @@ class MainViewModel @Inject constructor(
 
     private fun stopLocationUpdates() {
         viewModelScope.launch(Dispatchers.IO) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+            isSavingGpsList.value = true
             if (hasInternetConnection(getApplication())) {
-                isRemoteLoading.value = true
                 saveSnappedGpsDataList(getSnappedPoints())
-                isRemoteLoading.value = false
             } else {
                 saveOriginalGpsDataList()
             }
-            fusedLocationClient.removeLocationUpdates(locationCallback)
+            isSavingGpsList.value = false
         }
     }
 
@@ -296,7 +301,7 @@ class MainViewModel @Inject constructor(
 
         val dividedSnappedGpsList: List<List<GpsData>?> =
             dividedOriginalLocList
-                .map { locationList ->getSnappedPointsAsync(locationList) }
+                .map { locationList -> getSnappedPointsAsync(locationList) }
                 .map { deferred -> deferred.await() }
                 .map { retrofitResponse -> responseToNetworkResult(retrofitResponse) }
                 .map { networkResult -> netWorkResultToGpsList(networkResult) }
@@ -319,7 +324,7 @@ class MainViewModel @Inject constructor(
         val query = StringBuilder()
 
         val listSize = page.size
-        savedLocationList.forEachIndexed { index, location ->
+        page.forEachIndexed { index, location ->
             val latitude = location.latitude
             val longitude = location.longitude
 
