@@ -263,11 +263,11 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             fusedLocationClient.removeLocationUpdates(locationCallback)
             isSavingGpsList.value = true
-            if (hasInternetConnection(getApplication())) {
+            if (hasInternetConnection(getApplication()))
                 saveSnappedGpsDataList(getSnappedPoints())
-            } else {
+            else
                 saveOriginalGpsDataList()
-            }
+
             isSavingGpsList.value = false
         }
     }
@@ -304,7 +304,12 @@ class MainViewModel @Inject constructor(
                 .map { locationList -> getSnappedPointsAsync(locationList) }
                 .map { deferred -> deferred.await() }
                 .map { retrofitResponse -> responseToNetworkResult(retrofitResponse) }
-                .map { networkResult -> netWorkResultToGpsList(networkResult) }
+                .mapIndexed { index, networkResult ->
+                    netWorkResultToGpsList(
+                        networkResult,
+                        dividedOriginalLocList[index]
+                    )
+                }
 
         val combinedGpsList: List<List<GpsData>> =
             dividedSnappedGpsList.reduceOverlappedPoints(dividedOriginalLocList)
@@ -362,11 +367,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun netWorkResultToGpsList(networkResult: NetworkResult<RoadsApiResponse>): MutableList<GpsData>? {
+    private fun netWorkResultToGpsList(
+        networkResult: NetworkResult<RoadsApiResponse>, originalLocList: List<Location>
+    ): MutableList<GpsData>? {
         when (networkResult) {
             is NetworkResult.Success -> {
                 return if (networkResult.data == null) null
-                else responseToGpsDataList(networkResult.data)
+                else responseToGpsDataList(networkResult.data, originalLocList)
             }
 
             is NetworkResult.Error -> {
@@ -383,7 +390,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun responseToGpsDataList(responseBody: RoadsApiResponse): MutableList<GpsData> {
+    private fun responseToGpsDataList(
+        responseBody: RoadsApiResponse, originalLocList: List<Location>
+    ): MutableList<GpsData> {
         val gpsDataList = mutableListOf<GpsData>()
 
         responseBody.snappedPoints.forEach { snappedPoint ->
@@ -392,10 +401,10 @@ class MainViewModel @Inject constructor(
             val originalIndex: Int? = snappedPoint.originalIndex
 
             if (originalIndex !== null) {
-                val originalAlt = savedLocationList[originalIndex].altitude
-                val originalBear = savedLocationList[originalIndex].bearing
-                val originalSpeed = savedLocationList[originalIndex].speed
-                val originalTime = savedLocationList[originalIndex].time
+                val originalAlt = originalLocList[originalIndex].altitude
+                val originalBear = originalLocList[originalIndex].bearing
+                val originalSpeed = originalLocList[originalIndex].speed
+                val originalTime = originalLocList[originalIndex].time
                 gpsDataList.add(
                     GpsData(
                         latitude = snappedLat,
