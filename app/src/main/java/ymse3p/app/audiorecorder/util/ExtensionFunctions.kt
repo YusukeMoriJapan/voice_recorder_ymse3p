@@ -1,10 +1,10 @@
 package ymse3p.app.audiorecorder.util
 
+import android.location.Location
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import java.text.SimpleDateFormat
-import java.util.*
+import ymse3p.app.audiorecorder.models.GpsData
 
 fun <T> LiveData<T>.observeOnce(lifecycleOwner: LifecycleOwner, observer: Observer<T>) {
     observe(lifecycleOwner, object : Observer<T> {
@@ -14,8 +14,33 @@ fun <T> LiveData<T>.observeOnce(lifecycleOwner: LifecycleOwner, observer: Observ
         }
     })
 }
-//
-//fun Calendar.toStringDate(): String {
-//    val dataFormat = SimpleDateFormat(Constants.DATE_FORMAT)
-//    return dataFormat.format(time)
-//}
+
+fun <T> List<T>.divideList(paginationOverlap: Int, pageSizeLimit: Int): List<List<T>> {
+    val dividedList = mutableListOf<List<T>>()
+    var offset = 0
+    while (offset < this.size) {
+        if (offset > 0) offset -= paginationOverlap
+        val lowerBound = offset
+        val upperBound = (offset + pageSizeLimit).coerceAtMost(this.size)
+
+        val quota = this.subList(lowerBound, upperBound)
+
+        dividedList.add(quota)
+        offset = upperBound
+    }
+    return dividedList
+}
+
+fun <T> List<List<T>>.reAllocateOneByOne(): List<T> {
+    val oneByOneList = mutableListOf<T>()
+    this.forEach { list ->
+        list.forEach { element -> oneByOneList.add(element) }
+    }
+    return oneByOneList
+}
+
+fun List<Location>.locationListToGpsList(): List<GpsData> {
+    return this.mapIndexed { index, location ->
+        location.run { GpsData(latitude, longitude, altitude, bearing, speed, time, index) }
+    }
+}

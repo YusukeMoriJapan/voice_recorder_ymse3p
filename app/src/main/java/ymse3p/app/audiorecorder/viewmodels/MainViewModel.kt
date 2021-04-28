@@ -7,8 +7,6 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -16,11 +14,9 @@ import androidx.lifecycle.*
 import com.google.android.gms.location.*
 import com.google.gson.GsonBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.Response
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.Repository
@@ -29,6 +25,8 @@ import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.models.RoadsApiResponse
 import ymse3p.app.audiorecorder.util.*
+import ymse3p.app.audiorecorder.util.Constants.Companion.PAGE_SIZE_LIMIT
+import ymse3p.app.audiorecorder.util.Constants.Companion.PAGINATION_OVERLAP
 import java.io.*
 import java.lang.IllegalStateException
 import java.util.*
@@ -128,7 +126,7 @@ class MainViewModel @Inject constructor(
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
 
-        isRemoteLoading.first { isLoading ->
+        isSavingGpsList.first { isLoading ->
             if (isLoading) return@first false
 
             val audioEntity =
@@ -208,16 +206,21 @@ class MainViewModel @Inject constructor(
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val savedLocationList = mutableListOf<Location>()
     private var savedGpsDataList = mutableListOf<GpsData>()
-    private val isRemoteLoading = MutableStateFlow(false)
+    private val isSavingGpsList = MutableStateFlow(false)
 
     private val locationCallback = object : LocationCallback() {
         val lastLocationFlow =
             MutableSharedFlow<Location>(20, onBufferOverflow = BufferOverflow.SUSPEND)
 
         val jobAddCollection by lazy {
+            var counter = 0
             lastLocationFlow
                 .onEach {
-                    withContext(Dispatchers.IO) { savedLocationList.add(it) }
+                    withContext(Dispatchers.IO) {
+                        savedLocationList.add(it)
+                        counter += 1
+                        Log.d("counter", counter.toString())
+                    }
                 }
                 .launchIn(viewModelScope)
         }
@@ -233,8 +236,8 @@ class MainViewModel @Inject constructor(
         savedLocationList.clear()
         savedGpsDataList.clear()
         val locationRequest = LocationRequest.create().apply {
-            interval = 3000
-            fastestInterval = 2000
+            interval = 1000
+            fastestInterval = 1000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
@@ -257,25 +260,21 @@ class MainViewModel @Inject constructor(
     }
 
     private fun stopLocationUpdates() {
-
         viewModelScope.launch(Dispatchers.IO) {
-            if (hasInternetConnection()) {
-                isRemoteLoading.value = true
-                val snappedGpsDataList = getSnappedPoints()
-                if (snappedGpsDataList == null) saveOriginalGpsDataList()
-                else saveSnappedGpsDataList(snappedGpsDataList)
-                isRemoteLoading.value = false
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+            isSavingGpsList.value = true
+            if (hasInternetConnection(getApplication())) {
+                saveSnappedGpsDataList(getSnappedPoints())
             } else {
                 saveOriginalGpsDataList()
             }
-            fusedLocationClient.removeLocationUpdates(locationCallback)
+            isSavingGpsList.value = false
         }
     }
 
     private fun saveSnappedGpsDataList(snappedGpsDataList: MutableList<GpsData>) {
         savedGpsDataList = snappedGpsDataList
     }
-
 
     private fun saveOriginalGpsDataList() {
         savedLocationList.forEachIndexed { index, location ->
@@ -295,39 +294,37 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getSnappedPoints(): MutableList<GpsData>? {
-        /** Roads APIから補正データを取得 */
-        val retrofitResponse = repository.remoteDataSource.getSnappedPoints(generatePathQuery())
 
-        val networkResult: NetworkResult<RoadsApiResponse> =
-            handleRetrofitResponse(retrofitResponse)
+    private suspend fun getSnappedPoints(): MutableList<GpsData> {
+        val dividedOriginalLocList: List<List<Location>> =
+            savedLocationList.divideList(PAGINATION_OVERLAP, PAGE_SIZE_LIMIT)
 
-        when (networkResult) {
-            is NetworkResult.Success -> {
-                val responseBodyNullSafe: RoadsApiResponse = networkResult.data ?: return null
-                return responseToGpsDataList(responseBodyNullSafe)
-            }
+        val dividedSnappedGpsList: List<List<GpsData>?> =
+            dividedOriginalLocList
+                .map { locationList -> getSnappedPointsAsync(locationList) }
+                .map { deferred -> deferred.await() }
+                .map { retrofitResponse -> responseToNetworkResult(retrofitResponse) }
+                .map { networkResult -> netWorkResultToGpsList(networkResult) }
 
-            is NetworkResult.Error -> {
-                Log.e("Roads API Call", networkResult.message.orEmpty())
-                return null
+        val combinedGpsList: List<List<GpsData>> =
+            dividedSnappedGpsList.reduceOverlappedPoints(dividedOriginalLocList)
 
-            }
-
-            // 修正要　読み込み中状態を返すロジックは現状なし
-            is NetworkResult.Loading -> {
-                Log.d("Roads API Call", "network loading...")
-                return null
-            }
-        }
+        return combinedGpsList.reAllocateOneByOne().toMutableList()
     }
 
+    private suspend fun getSnappedPointsAsync(locationList: List<Location>): Deferred<Response<RoadsApiResponse>> =
+        coroutineScope {
+            async(Dispatchers.IO) {
+                val pathQuery: String = generatePathQuery(locationList)
+                repository.remoteDataSource.getSnappedPoints(pathQuery)
+            }
+        }
 
-    private fun generatePathQuery(): String {
+    private fun generatePathQuery(page: List<Location>): String {
         val query = StringBuilder()
 
-        val listSize = savedLocationList.size
-        savedLocationList.forEachIndexed { index, location ->
+        val listSize = page.size
+        page.forEachIndexed { index, location ->
             val latitude = location.latitude
             val longitude = location.longitude
 
@@ -340,7 +337,7 @@ class MainViewModel @Inject constructor(
         return query.toString()
     }
 
-    private fun handleRetrofitResponse(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
+    private fun responseToNetworkResult(response: Response<RoadsApiResponse>): NetworkResult<RoadsApiResponse> {
         when {
             response.message().toString().contains("timeout") -> {
                 return NetworkResult.Error("Timeout")
@@ -362,6 +359,27 @@ class MainViewModel @Inject constructor(
                 return NetworkResult.Error(response.message())
             }
 
+        }
+    }
+
+    private fun netWorkResultToGpsList(networkResult: NetworkResult<RoadsApiResponse>): MutableList<GpsData>? {
+        when (networkResult) {
+            is NetworkResult.Success -> {
+                return if (networkResult.data == null) null
+                else responseToGpsDataList(networkResult.data)
+            }
+
+            is NetworkResult.Error -> {
+                Log.e("Roads API Call", networkResult.message.orEmpty())
+                return null
+
+            }
+
+            // 修正要　読み込み中状態を返すロジックは現状なし
+            is NetworkResult.Loading -> {
+                Log.d("Roads API Call", "network loading...")
+                return null
+            }
         }
     }
 
@@ -396,20 +414,28 @@ class MainViewModel @Inject constructor(
         return gpsDataList
     }
 
-    private fun hasInternetConnection(): Boolean {
-        val connectivityManager = getApplication<Application>().getSystemService(
-            Context.CONNECTIVITY_SERVICE
-        ) as ConnectivityManager
-        val activeNetwork = connectivityManager.activeNetwork ?: return false
-        val capabilities =
-            connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return when {
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
-            else -> false
+
+    private fun List<List<GpsData>?>.reduceOverlappedPoints(originalList: List<List<Location>>): List<List<GpsData>> =
+        this.mapIndexed { index, gpsList ->
+            gpsList
+                ?: run { return@mapIndexed originalList[index].locationListToGpsList() }
+
+            if (index == 0) return@mapIndexed gpsList
+
+            val reducedGpsList: MutableList<GpsData> = mutableListOf()
+            var passedOverlap = false
+            gpsList.forEach { gpsData ->
+                val safeOriginalIndex = gpsData.originalIndex
+                    ?: run {
+                        if (passedOverlap) reducedGpsList.add(gpsData)
+                        return@forEach
+                    }
+
+                if (safeOriginalIndex >= PAGINATION_OVERLAP - 1) passedOverlap = true
+                if (passedOverlap) reducedGpsList.add(gpsData)
+            }
+            return@mapIndexed reducedGpsList
         }
-    }
 
     private fun sampleJsonToGpsList(): List<GpsData> {
         val sampleJson = getSampleJson(getApplication())
