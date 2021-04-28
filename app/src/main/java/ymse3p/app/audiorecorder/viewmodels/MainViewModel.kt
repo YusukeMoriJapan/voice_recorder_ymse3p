@@ -27,6 +27,7 @@ import ymse3p.app.audiorecorder.models.RoadsApiResponse
 import ymse3p.app.audiorecorder.util.*
 import ymse3p.app.audiorecorder.util.Constants.Companion.PAGE_SIZE_LIMIT
 import ymse3p.app.audiorecorder.util.Constants.Companion.PAGINATION_OVERLAP
+import ymse3p.app.audiorecorder.util.Constants.Companion.REQUEST_MIN_INTERVAL_MS
 import java.io.*
 import java.lang.IllegalStateException
 import java.util.*
@@ -301,7 +302,11 @@ class MainViewModel @Inject constructor(
 
         val dividedSnappedGpsList: List<List<GpsData>?> =
             dividedOriginalLocList
-                .map { locationList -> getSnappedPointsAsync(locationList) }
+                .map { locationList ->
+                    val deferred = getSnappedPointsAsync(locationList)
+                    delay(REQUEST_MIN_INTERVAL_MS * 2)
+                    return@map deferred
+                }
                 .map { deferred -> deferred.await() }
                 .map { retrofitResponse -> responseToNetworkResult(retrofitResponse) }
                 .mapIndexed { index, networkResult ->

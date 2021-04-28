@@ -212,14 +212,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPermission() {
-        requestPermissions(
-            arrayOf(
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            ),
-            REQUEST_RECORD_AUDIO_PERMISSION
-        )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ),
+                REQUEST_RECORD_AUDIO_PERMISSION
+            )
+        else
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ),
+                REQUEST_RECORD_AUDIO_PERMISSION
+            )
     }
 
     private fun showSnackBarGrantNeeded() {

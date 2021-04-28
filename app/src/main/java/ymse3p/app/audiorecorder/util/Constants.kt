@@ -33,5 +33,6 @@ class Constants {
         //Roads API request rule
         const val PAGINATION_OVERLAP = 5
         const val PAGE_SIZE_LIMIT = 100
+        const val REQUEST_MIN_INTERVAL_MS: Long = 100
     }
 }
