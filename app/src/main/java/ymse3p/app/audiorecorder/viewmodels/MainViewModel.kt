@@ -63,7 +63,9 @@ class MainViewModel @Inject constructor(
             audioRecorder.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncoder(MediaRecorder.AudioEncoder.HE_AAC)
+                setAudioEncodingBitRate(1152000)
+                setAudioSamplingRate(48000)
                 this@MainViewModel.readRecordedAudioId.first { audioId ->
                     currentOutputFileName = File(
                         getApplication<Application>().filesDir,

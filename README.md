@@ -1,4 +1,5 @@
-# オーディオレコーダー
+# Multi Recorder
+#### 「いつ・どこで・何を」話していたか、を記録するアプリです
 
 # 目次
 - [アプリダウンロード先](#アプリダウンロード先)
@@ -8,8 +9,8 @@
 - [アプリのアピールポイント](#アプリのアピールポイント)
 
 # アプリダウンロード先
-GooglePlay Storeからインストール下さい  
-https://play.google.com/store/apps/details?id=ymse3p.app.audiorecorder
+DeployGate経由でのダウンロードをお願い致します。  
+https://dply.me/lkjcwc
 
 
 # アプリ機能
