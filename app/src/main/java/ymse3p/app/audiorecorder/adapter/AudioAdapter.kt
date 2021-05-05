@@ -7,14 +7,18 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
@@ -24,6 +28,8 @@ import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 import java.io.File
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class AudioAdapter(
     private val mainViewModel: MainViewModel,
@@ -53,7 +59,19 @@ class AudioAdapter(
         val binding: AudioRowLayoutBinding,
         private val playBackViewModel: PlayBackViewModel,
         var currentPosition: Int? = null,
+        private val fragmentCoroutineScope: LifecycleCoroutineScope
     ) : RecyclerView.ViewHolder(binding.root) {
+
+        lateinit var googleMap: GoogleMap
+
+        init {
+            fragmentCoroutineScope.launchWhenCreated {
+                googleMap = binding.rowMapView.getMapSuspend()
+                /** map取得直後に実行する処理
+                 * 取得時点でバインドされているAudioEntityの位置データをもとに描画
+                 * */
+            }
+        }
 
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
@@ -88,24 +106,49 @@ class AudioAdapter(
             }
 
             binding.audioEntity = audioEntity
+            binding.initializeMapView()
             binding.executePendingBindings()
         }
+
+        private fun AudioRowLayoutBinding.initializeMapView() {
+            if (!::googleMap.isInitialized) return
+            audioEntity ?: return
+            /**
+             * googleMapの描画処理
+             * */
+        }
+
+        private suspend fun MapView.getMapSuspend(): GoogleMap =
+            suspendCoroutine { continuation ->
+                getMapAsync { googleMap -> continuation.resume(googleMap) }
+            }
 
         companion object {
             fun factory(
                 parent: ViewGroup,
                 playBackViewModel: PlayBackViewModel,
+                fragmentCoroutineScope: LifecycleCoroutineScope
             ): MyViewHolder {
+                val binding = createDataBinding(parent)
+                return MyViewHolder(
+                    binding, playBackViewModel,
+                    fragmentCoroutineScope = fragmentCoroutineScope
+                )
+            }
+
+            private fun createDataBinding(parent: ViewGroup): AudioRowLayoutBinding {
                 val layoutInflater = LayoutInflater.from(parent.context)
                 val binding = AudioRowLayoutBinding.inflate(layoutInflater, parent, false)
-                return MyViewHolder(binding, playBackViewModel)
+                binding.rowMapView.onCreate(null)
+                return binding
             }
         }
     }
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val viewHolder = MyViewHolder.factory(parent, playBackViewModel)
+        val viewHolder =
+            MyViewHolder.factory(parent, playBackViewModel, requireActivity.lifecycleScope)
         viewHolders.add(viewHolder)
         return viewHolder
     }
@@ -115,6 +158,9 @@ class AudioAdapter(
         holder.bind(currentAudio, position)
 
         saveItemStateOnScroll(currentAudio, holder)
+
+        /** 現在地をLiteModeで表示させる場合は、onResumeとonPauseの呼び出しが必要 */
+//        holder.binding.rowMapView.onResume()
 
         holder.binding.audioRowLayout.setOnClickListener {
             when {

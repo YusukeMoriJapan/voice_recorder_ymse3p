@@ -37,27 +37,40 @@
                 android:layout_height="wrap_content"
                 android:background="@color/cardBackgroundColor">
 
+                <View
+                    android:id="@+id/center_line"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.1dp"
+                    android:background="@android:color/darker_gray"
+                    android:visibility="invisible"
+                    app:layout_constraintBottom_toBottomOf="@+id/play_float_button"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/play_float_button" />
+
                 <TextView
                     android:id="@+id/audio_title_row"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginBottom="2dp"
+                    android:layout_marginBottom="4dp"
                     android:text="@{audioEntity.audioTitle}"
                     android:textColor="@color/titleColor"
                     android:textSize="18sp"
-                    app:layout_constraintBottom_toTopOf="@+id/guideline2"
+                    app:layout_constraintBottom_toTopOf="@+id/center_line"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
                     tools:text="タイトル名" />
 
-                <com.google.android.gms.maps.MapView
-                    android:id="@+id/fragment_embedded_map_view_mapview"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_marginTop="0dp"
-                    app:layout_constraintTop_toBottomOf="@+id/audio_duration"
-                    map:liteMode="true"/>
 
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/row_map_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:layout_marginTop="80dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    map:liteMode="true" />
 
                 <TextView
                     android:id="@+id/audio_date"
@@ -65,11 +78,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:text="     "
                     android:textColor="@color/descriptionColor"
                     app:layout_constraintStart_toEndOf="@+id/audio_duration"
-                    app:layout_constraintTop_toTopOf="@+id/guideline2"
+                    app:layout_constraintTop_toBottomOf="@+id/center_line"
                     tools:text="2020/12/18" />
 
                 <TextView
@@ -78,11 +91,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:text="     "
                     android:textColor="@color/descriptionColor"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
-                    app:layout_constraintTop_toTopOf="@+id/guideline2"
+                    app:layout_constraintTop_toBottomOf="@+id/center_line"
                     tools:text="01:35:10" />
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -92,6 +105,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
                     android:clickable="true"
+                    app:elevation="0dp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:srcCompat="@drawable/ic_baseline_play_arrow_24" />
@@ -99,10 +113,20 @@
                 <TextView
                     android:id="@+id/blank_audio_row"
                     android:layout_width="0dp"
-                    android:layout_height="16dp"
+                    android:layout_height="4dp"
+                    android:visibility="gone"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/play_float_button" />
+                    app:layout_constraintTop_toBottomOf="@+id/audio_date" />
+
+                <TextView
+                    android:id="@+id/blank_audio_row_top"
+                    android:layout_width="0dp"
+                    android:layout_height="4dp"
+                    android:visibility="gone"
+                    map:layout_constraintEnd_toEndOf="parent"
+                    map:layout_constraintStart_toStartOf="parent"
+                    map:layout_constraintTop_toBottomOf="@+id/audio_date" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/guideline2"
@@ -110,6 +134,18 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     app:layout_constraintGuide_percent="0.5" />
+
+                <TextView
+                    android:id="@+id/location_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="大阪府守口市豊秀町１６丁目７番地２メゾンシェポルあああああああ"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
 
