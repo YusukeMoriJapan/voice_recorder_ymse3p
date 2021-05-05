@@ -12,9 +12,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
+import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.util.AudioDiffUtil
 import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
@@ -70,6 +73,7 @@ class AudioAdapter(
                 /** map取得直後に実行する処理
                  * 取得時点でバインドされているAudioEntityの位置データをもとに描画
                  * */
+                binding.audioEntity?.gpsDataList?.run { drawPolyLine(googleMap, this) }
             }
         }
 
@@ -112,16 +116,31 @@ class AudioAdapter(
 
         private fun AudioRowLayoutBinding.initializeMapView() {
             if (!::googleMap.isInitialized) return
-            audioEntity ?: return
-            /**
-             * googleMapの描画処理
-             * */
+            /** googleMapの描画処理 */
+            audioEntity?.gpsDataList?.run { drawPolyLine(googleMap, this) }
         }
 
         private suspend fun MapView.getMapSuspend(): GoogleMap =
             suspendCoroutine { continuation ->
                 getMapAsync { googleMap -> continuation.resume(googleMap) }
             }
+
+        private fun drawPolyLine(googleMap: GoogleMap, gpsDataList: List<GpsData>) {
+            val latLngList = gpsDataToLatLng(gpsDataList)
+            googleMap.addPolyline(PolylineOptions().addAll(latLngList))
+
+            val startPoint = latLngList.firstOrNull()
+            if (startPoint !== null)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15f))
+        }
+
+        private fun gpsDataToLatLng(gpsDataList: List<GpsData>): List<LatLng> {
+            val latLngList = mutableListOf<LatLng>()
+            gpsDataList.forEach { gpsData ->
+                latLngList.add(LatLng(gpsData.latitude, gpsData.longitude))
+            }
+            return latLngList
+        }
 
         companion object {
             fun factory(
