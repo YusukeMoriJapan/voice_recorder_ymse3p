@@ -1,8 +1,6 @@
 package ymse3p.app.audiorecorder.adapter
 
 import android.app.Application
-import android.content.Context
-import android.graphics.Color
 import android.media.session.PlaybackState
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -16,14 +14,16 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
@@ -69,17 +69,26 @@ class AudioAdapter(
         private val fragmentCoroutineScope: LifecycleCoroutineScope
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        lateinit var googleMap: GoogleMap
+        private lateinit var googleMapStart: GoogleMap
+        private lateinit var googleMapEnd: GoogleMap
 
         init {
             fragmentCoroutineScope.launchWhenCreated {
-                googleMap = binding.rowMapView.getMapSuspend()
-                /** map取得直後に実行する処理
-                 * 取得時点でバインドされているAudioEntityの位置データをもとに描画
-                 * */
-                binding.audioEntity?.gpsDataList?.run { drawPolyLine(googleMap, this) }
+                withContext(Dispatchers.Main) {
+                    googleMapStart = binding.rowMapViewStart.getMapSuspend()
+                    googleMapEnd = binding.rowMapViewEnd.getMapSuspend()
+                    /** map取得直後に実行する処理
+                     * 取得時点でバインドされているAudioEntityの位置データをもとに描画
+                     * */
+                    binding.audioEntity?.gpsDataList?.run {
+                        val latLngList = gpsDataToLatLng(this)
+                        addStartMarker(googleMapStart, latLngList)
+                        addEndMarker(googleMapEnd, latLngList)
+                    }
+                }
             }
         }
+
 
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
@@ -119,9 +128,13 @@ class AudioAdapter(
         }
 
         private fun AudioRowLayoutBinding.initializeMapView() {
-            if (!::googleMap.isInitialized) return
+            if (!::googleMapStart.isInitialized) return
             /** googleMapの描画処理 */
-            audioEntity?.gpsDataList?.run { drawPolyLine(googleMap, this) }
+            binding.audioEntity?.gpsDataList?.run {
+                val latLngList = gpsDataToLatLng(this)
+                addStartMarker(googleMapStart, latLngList)
+                addEndMarker(googleMapEnd, latLngList)
+            }
         }
 
         private suspend fun MapView.getMapSuspend(): GoogleMap =
@@ -129,39 +142,25 @@ class AudioAdapter(
                 getMapAsync { googleMap -> continuation.resume(googleMap) }
             }
 
-        private fun drawPolyLine(googleMap: GoogleMap, gpsDataList: List<GpsData>) {
-            val latLngList = gpsDataToLatLng(gpsDataList)
-            googleMap.addPolyline(
-                PolylineOptions().addAll(latLngList).color(
-                    ContextCompat.getColor(
-                        playBackViewModel.getApplication<Application>(),
-                        R.color.taikoh_dark
-                    )
-                )
-            )
-
+        private fun addStartMarker(googleMapStart: GoogleMap, latLngList: List<LatLng>) {
             val startPoint = latLngList.firstOrNull() ?: return
-            val endPoint = latLngList.lastOrNull() ?: return
-
-            val boundsBuilder = LatLngBounds.builder()
-                .include(startPoint)
-                .include(endPoint)
-
-//            googleMap.addMarker(
-//                MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
+            googleMapStart.addMarker(
+                MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
 //                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_on_24))
-//            )
-
-//            googleMap.addMarker(
-//                MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
-//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_off_24))
-//            )
-
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 0))
-            googleMap.moveCamera(CameraUpdateFactory.zoomBy(-0.6f))
-//            if (startPoint !== null)
-//                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15f))
+            )
+            googleMapStart.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15F))
         }
+
+
+        private fun addEndMarker(googleMapEnd: GoogleMap, latLngList: List<LatLng>) {
+            val endPoint = latLngList.lastOrNull() ?: return
+            googleMapEnd.addMarker(
+                MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
+//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_off_24))
+            )
+            googleMapEnd.moveCamera(CameraUpdateFactory.newLatLngZoom(endPoint, 15F))
+        }
+
 
         private fun gpsDataToLatLng(gpsDataList: List<GpsData>): List<LatLng> {
             val latLngList = mutableListOf<LatLng>()
@@ -187,7 +186,8 @@ class AudioAdapter(
             private fun createDataBinding(parent: ViewGroup): AudioRowLayoutBinding {
                 val layoutInflater = LayoutInflater.from(parent.context)
                 val binding = AudioRowLayoutBinding.inflate(layoutInflater, parent, false)
-                binding.rowMapView.onCreate(null)
+                binding.rowMapViewStart.onCreate(null)
+                binding.rowMapViewEnd.onCreate(null)
                 return binding
             }
         }

@@ -36,25 +36,25 @@
                 android:layout_height="wrap_content"
                 android:background="@color/cardBackgroundColor">
 
-                <com.google.android.gms.maps.MapView xmlns:map="http://schemas.android.com/apk/res-auto"
-                    android:id="@+id/row_map_view"
-                    android:layout_width="match_parent"
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/row_map_view_start"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintEnd_toStartOf="@+id/guideline2"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/play_float_button"
+                    app:liteMode="true" />
+
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/row_map_view_end"
+                    android:layout_width="0dp"
                     android:layout_height="100dp"
                     android:layout_marginTop="8dp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/row_map_view_start"
                     app:layout_constraintTop_toBottomOf="@+id/play_float_button"
-                    map:liteMode="true" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:background="@drawable/gradation_map"
-                    android:visibility="invisible"
-                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view"
-                    app:layout_constraintEnd_toEndOf="@+id/row_map_view"
-                    app:layout_constraintStart_toStartOf="@+id/row_map_view"
-                    app:layout_constraintTop_toTopOf="@+id/row_map_view" />
+                    app:liteMode="true" />
 
                 <View
                     android:id="@+id/center_line"
@@ -140,7 +140,7 @@
                     android:id="@+id/guideline2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     app:layout_constraintGuide_percent="0.5" />
 
                 <TextView
@@ -156,7 +156,7 @@
                     android:textSize="12sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/start_loc_icon"
-                    app:layout_constraintTop_toBottomOf="@+id/row_map_view" />
+                    app:layout_constraintTop_toBottomOf="@+id/row_map_view_start" />
 
                 <TextView
                     android:id="@+id/start_location_text2"

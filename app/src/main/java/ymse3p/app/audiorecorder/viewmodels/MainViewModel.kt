@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
@@ -129,6 +131,9 @@ class MainViewModel @Inject constructor(
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
 
+        val startAddress: String? = getStartAddress(savedLocationList)
+        val endAddress: String? = getEndAddress(savedLocationList)
+
         isSavingGpsList.first { isLoading ->
             if (isLoading) return@first false
 
@@ -138,7 +143,9 @@ class MainViewModel @Inject constructor(
                     currentAudioCreatedDate ?: Calendar.getInstance(),
                     audioTitle,
                     audioDuration,
-                    savedGpsDataList
+                    savedGpsDataList,
+                    startAddress,
+                    endAddress
                 )
             repository.localDataSource.insertAudio(audioEntity)
             currentOutputFileName = null
@@ -204,8 +211,55 @@ class MainViewModel @Inject constructor(
         audioRecorder.release()
     }
 
-
     /** Location */
+    private fun getStartAddress(locationList: List<Location>): String? {
+        val strAddress = StringBuffer()
+        val gCoder = Geocoder(getApplication(), Locale.getDefault())
+
+        val startLoc: Location = locationList.firstOrNull() ?: return null
+
+        return try {
+            val startAddressList =
+                gCoder.getFromLocation(startLoc.latitude, startLoc.longitude, 1)
+
+            addressToString(startAddressList, strAddress)
+        } catch (e: IOException) {
+            Log.e("Geocoder", e.stackTrace.toString())
+            null
+        }
+    }
+
+    private fun getEndAddress(locationList: List<Location>): String? {
+        val strAddress = StringBuffer()
+        val gCoder = Geocoder(getApplication(), Locale.getDefault())
+
+        val endLoc: Location = locationList.lastOrNull() ?: return null
+
+        return try {
+            val endAddressList =
+                gCoder.getFromLocation(endLoc.latitude, endLoc.longitude, 1)
+
+            addressToString(endAddressList, strAddress)
+        } catch (e: IOException) {
+            Log.e("Geocoder", e.stackTrace.toString())
+            null
+        }
+    }
+
+    private fun addressToString(
+        addressList: List<Address>,
+        strAddress: StringBuffer
+    ): String? {
+        val address: Address = addressList.firstOrNull() ?: return null
+
+        val maxLineIndex = address.maxAddressLineIndex
+        for (i in 0..maxLineIndex) {
+            strAddress.append(address.getAddressLine(i))
+        }
+        return strAddress.toString()
+    }
+
+    /** Pathway */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val savedLocationList = mutableListOf<Location>()
     private var savedGpsDataList = mutableListOf<GpsData>()
