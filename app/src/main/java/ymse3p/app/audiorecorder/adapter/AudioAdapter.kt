@@ -1,6 +1,8 @@
 package ymse3p.app.audiorecorder.adapter
 
 import android.app.Application
+import android.content.Context
+import android.graphics.Color
 import android.media.session.PlaybackState
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -14,13 +16,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
@@ -33,6 +36,7 @@ import java.io.File
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+
 
 class AudioAdapter(
     private val mainViewModel: MainViewModel,
@@ -127,11 +131,36 @@ class AudioAdapter(
 
         private fun drawPolyLine(googleMap: GoogleMap, gpsDataList: List<GpsData>) {
             val latLngList = gpsDataToLatLng(gpsDataList)
-            googleMap.addPolyline(PolylineOptions().addAll(latLngList))
+            googleMap.addPolyline(
+                PolylineOptions().addAll(latLngList).color(
+                    ContextCompat.getColor(
+                        playBackViewModel.getApplication<Application>(),
+                        R.color.taikoh_dark
+                    )
+                )
+            )
 
-            val startPoint = latLngList.firstOrNull()
-            if (startPoint !== null)
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15f))
+            val startPoint = latLngList.firstOrNull() ?: return
+            val endPoint = latLngList.lastOrNull() ?: return
+
+            val boundsBuilder = LatLngBounds.builder()
+                .include(startPoint)
+                .include(endPoint)
+
+//            googleMap.addMarker(
+//                MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
+//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_on_24))
+//            )
+
+//            googleMap.addMarker(
+//                MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
+//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_off_24))
+//            )
+
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 0))
+            googleMap.moveCamera(CameraUpdateFactory.zoomBy(-0.6f))
+//            if (startPoint !== null)
+//                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15f))
         }
 
         private fun gpsDataToLatLng(gpsDataList: List<GpsData>): List<LatLng> {

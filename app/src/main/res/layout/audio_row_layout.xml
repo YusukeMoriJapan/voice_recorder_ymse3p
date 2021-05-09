@@ -134,7 +134,7 @@
                     android:layout_height="8dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/start_location_text2" />
+                    app:layout_constraintTop_toBottomOf="@+id/imageView2" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/guideline2"
