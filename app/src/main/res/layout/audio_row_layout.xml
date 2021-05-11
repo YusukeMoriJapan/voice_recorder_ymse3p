@@ -36,11 +36,32 @@
                 android:layout_height="wrap_content"
                 android:background="@color/cardBackgroundColor">
 
+                <View
+                    android:id="@+id/start_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_start"
+                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_start"
+                    app:layout_constraintStart_toStartOf="@+id/row_map_view_start"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_start" />
+
+                <View
+                    android:id="@+id/end_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_end"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/start_map_background"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_end" />
+
                 <com.google.android.gms.maps.MapView
                     android:id="@+id/row_map_view_start"
                     android:layout_width="0dp"
                     android:layout_height="100dp"
                     android:layout_marginTop="8dp"
+                    android:visibility="visible"
                     app:layout_constraintEnd_toStartOf="@+id/guideline2"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/play_float_button"
@@ -51,6 +72,7 @@
                     android:layout_width="0dp"
                     android:layout_height="100dp"
                     android:layout_marginTop="8dp"
+                    android:visibility="visible"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/row_map_view_start"
                     app:layout_constraintTop_toBottomOf="@+id/play_float_button"
@@ -69,14 +91,18 @@
 
                 <TextView
                     android:id="@+id/audio_title_row"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
                     android:layout_marginBottom="4dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="@{audioEntity.audioTitle}"
                     android:textColor="@color/titleColor"
                     android:textSize="18sp"
                     app:layout_constraintBottom_toTopOf="@+id/center_line"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
                     tools:text="タイトル名" />
 
@@ -151,12 +177,12 @@
                     android:layout_marginEnd="16dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    app:setAddress="@{audioEntity.startAddress}"
                     android:textColor="@color/descriptionColor"
                     android:textSize="12sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/start_loc_icon"
-                    app:layout_constraintTop_toBottomOf="@+id/row_map_view_start" />
+                    app:layout_constraintTop_toBottomOf="@+id/row_map_view_start"
+                    app:setAddress="@{audioEntity.startAddress}" />
 
                 <TextView
                     android:id="@+id/start_location_text2"
@@ -166,12 +192,12 @@
                     android:layout_marginEnd="16dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    app:setAddress="@{audioEntity.endAddress}"
                     android:textColor="@color/descriptionColor"
                     android:textSize="12sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/imageView2"
-                    app:layout_constraintTop_toBottomOf="@+id/start_location_text" />
+                    app:layout_constraintTop_toBottomOf="@+id/start_location_text"
+                    app:setAddress="@{audioEntity.endAddress}" />
 
                 <ImageView
                     android:id="@+id/start_loc_icon"
@@ -192,6 +218,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/start_location_text2"
                     app:srcCompat="@drawable/ic_baseline_location_off_24" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
 

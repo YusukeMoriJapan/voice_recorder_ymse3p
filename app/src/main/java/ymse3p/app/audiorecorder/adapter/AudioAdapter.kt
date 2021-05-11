@@ -20,7 +20,6 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,7 +51,7 @@ class AudioAdapter(
     private var audio = emptyList<AudioEntity>()
 
     /** 生成されたViewHolderを保持 */
-    private val viewHolders = mutableListOf<MyViewHolder>()
+    val viewHolders = mutableListOf<MyViewHolder>()
 
     /** ユーザーがシングルクリックした音源データ */
     val selectedAudioEntity = MutableSharedFlow<AudioEntity>()
@@ -73,25 +72,33 @@ class AudioAdapter(
         private lateinit var googleMapEnd: GoogleMap
 
         init {
-            fragmentCoroutineScope.launchWhenCreated {
-                withContext(Dispatchers.Main) {
-                    googleMapStart = binding.rowMapViewStart.getMapSuspend().apply {
-                        uiSettings.isMapToolbarEnabled = false
-                    }
-                    googleMapEnd = binding.rowMapViewEnd.getMapSuspend().apply {
-                        uiSettings.isMapToolbarEnabled = false
-                    }
+            binding.rowMapViewStart.visibility = View.INVISIBLE
+            binding.rowMapViewEnd.visibility = View.INVISIBLE
+            fragmentCoroutineScope.launchWhenCreated { withContext(Dispatchers.Default) { getGoogleMaps() } }
+        }
 
-                    /** map取得直後に実行する処理
-                     * 取得時点でバインドされているAudioEntityの位置データをもとに描画
-                     * */
-                    binding.audioEntity?.gpsDataList?.run {
-                        val latLngList = gpsDataToLatLng(this)
-                        addStartMarker(googleMapStart, latLngList)
-                        addEndMarker(googleMapEnd, latLngList)
-                    }
+        private suspend fun getGoogleMaps() {
+            withContext(Dispatchers.Main) {
+                googleMapStart = binding.rowMapViewStart.getMapSuspend().apply {
+                    uiSettings.isMapToolbarEnabled = false
                 }
+                googleMapEnd = binding.rowMapViewEnd.getMapSuspend().apply {
+                    uiSettings.isMapToolbarEnabled = false
+                }
+
+                /** map取得直後に実行する処理
+                 * 取得時点でバインドされているAudioEntityの位置データをもとに描画
+                 * */
+                binding.audioEntity?.gpsDataList?.run {
+                    val latLngList = gpsDataToLatLng(this)
+                    addStartMarker(googleMapStart, latLngList)
+                    addEndMarker(googleMapEnd, latLngList)
+                }
+
+                binding.rowMapViewStart.visibility = View.VISIBLE
+                binding.rowMapViewEnd.visibility = View.VISIBLE
             }
+
         }
 
 
@@ -135,11 +142,20 @@ class AudioAdapter(
         private fun AudioRowLayoutBinding.initializeMapView() {
             if (!::googleMapStart.isInitialized) return
             /** googleMapの描画処理 */
+            googleMapStart.clear()
+            googleMapEnd.clear()
+
+            binding.rowMapViewStart.visibility = View.INVISIBLE
+            binding.rowMapViewEnd.visibility = View.INVISIBLE
+
             binding.audioEntity?.gpsDataList?.run {
                 val latLngList = gpsDataToLatLng(this)
                 addStartMarker(googleMapStart, latLngList)
                 addEndMarker(googleMapEnd, latLngList)
             }
+
+            binding.rowMapViewStart.visibility = View.VISIBLE
+            binding.rowMapViewEnd.visibility = View.VISIBLE
         }
 
         private suspend fun MapView.getMapSuspend(): GoogleMap =
@@ -197,7 +213,6 @@ class AudioAdapter(
             }
         }
     }
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         val viewHolder =

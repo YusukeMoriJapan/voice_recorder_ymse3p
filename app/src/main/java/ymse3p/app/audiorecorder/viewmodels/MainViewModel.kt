@@ -55,8 +55,8 @@ class MainViewModel @Inject constructor(
     private var currentOutputFileName: File? = null
     private var currentAudioCreatedDate: Calendar? = null
 
-    private val _isInserting = MutableStateFlow(false)
-    val isInserting: StateFlow<Boolean> = _isInserting
+    private val _isInserting = MutableSharedFlow<Boolean>()
+    val isInserting: SharedFlow<Boolean> = _isInserting
 
 
     /** 録音処理(Media Recorderに対する処理) */
@@ -121,7 +121,7 @@ class MainViewModel @Inject constructor(
     fun insertAudio(
         audioTitle: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
-        _isInserting.value = true
+        _isInserting.emit(true)
         val audioDuration = try {
             MediaMetadataRetriever().run {
                 setDataSource(currentOutputFileName?.path)
@@ -151,7 +151,7 @@ class MainViewModel @Inject constructor(
             currentOutputFileName = null
             return@first true
         }
-        _isInserting.value = false
+        _isInserting.emit(false)
     }
 
     fun deleteAudio(audioEntity: AudioEntity) =
@@ -168,7 +168,7 @@ class MainViewModel @Inject constructor(
     /** サンプルデータに対する操作　*/
     fun insertSampleAudio() {
         viewModelScope.launch(Dispatchers.IO) {
-            _isInserting.value = true
+            _isInserting.emit(true)
             val sampleUri =
                 Uri.parse("android.resource://${this@MainViewModel.getApplication<Application>().packageName}/" + R.raw.sample_audio)
             val audioCreateDate = Calendar.getInstance().apply { time = Date(0) }
@@ -196,7 +196,7 @@ class MainViewModel @Inject constructor(
                 )
             }
             repository.localDataSource.insertAudioList(audioList)
-            _isInserting.value = false
+            _isInserting.emit(false)
         }
 
 

@@ -70,21 +70,25 @@ class AudioListFragment : Fragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         if (::onCreateViewJob.isInitialized) onCreateViewJob.cancel()
         mAdapter.clearContextualActionMode()
+
+        mAdapter.viewHolders.forEach { viewHolder ->
+            viewHolder.binding.rowMapViewStart.onDestroy()
+            viewHolder.binding.rowMapViewEnd.onDestroy()
+        }
         _binding = null
     }
 
 
     private fun setupRecyclerView() {
-        binding.audioListRecyclerview.adapter = mAdapter
-        binding.audioListRecyclerview.layoutManager = LinearLayoutManager(requireContext())
+        binding.audioListRecyclerview.apply {
+            adapter = mAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(true)
+        }
         showShimmerEffect()
     }
 
@@ -92,7 +96,6 @@ class AudioListFragment : Fragment() {
         mainViewModel.readAudio.observe(viewLifecycleOwner, { database ->
             mAdapter.setData(database)
             hideShimmerEffect()
-
         })
 
     }

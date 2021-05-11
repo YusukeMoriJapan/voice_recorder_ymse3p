@@ -4,6 +4,14 @@
     tools:context="ymse3p.app.audiorecorder.ymse3p.app.ui.MainActivity">
 
     <item
+        android:id="@+id/menu_search"
+        android:icon="@drawable/ic_baseline_search_24"
+        android:title="検索"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="ifRoom"
+        tools:targetApi="o" />
+
+    <item
         android:id="@+id/delete_all_data"
         android:orderInCategory="98"
         android:title="全データ削除"
