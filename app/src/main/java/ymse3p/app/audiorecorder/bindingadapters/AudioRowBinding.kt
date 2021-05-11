@@ -29,5 +29,24 @@ class AudioRowBinding {
             val createdDate = audioEntity.audioCreateDate.time
             textView.text = dataFormat.format(createdDate)
         }
+
+        @BindingAdapter("setAddress")
+        @JvmStatic
+        fun setAddress(textView: TextView, address: String?) {
+            /**住所例：日本、〒150-0043 東京都渋谷区道玄坂１丁目６−１０
+             * 国名、郵便番号は表示する必要なし
+             * */
+            val splintedAddress = address?.split(" ") ?: run {
+                textView.text = "位置情報は保存されていません"
+                return
+            }
+            try {
+                textView.text = splintedAddress[1]
+            } catch (e: IndexOutOfBoundsException) {
+                textView.text = "位置情報は保存されていません"
+                return
+            }
+
+        }
     }
 }

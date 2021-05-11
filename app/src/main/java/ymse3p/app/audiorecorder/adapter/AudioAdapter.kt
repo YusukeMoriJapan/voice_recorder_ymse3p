@@ -75,8 +75,13 @@ class AudioAdapter(
         init {
             fragmentCoroutineScope.launchWhenCreated {
                 withContext(Dispatchers.Main) {
-                    googleMapStart = binding.rowMapViewStart.getMapSuspend()
-                    googleMapEnd = binding.rowMapViewEnd.getMapSuspend()
+                    googleMapStart = binding.rowMapViewStart.getMapSuspend().apply {
+                        uiSettings.isMapToolbarEnabled = false
+                    }
+                    googleMapEnd = binding.rowMapViewEnd.getMapSuspend().apply {
+                        uiSettings.isMapToolbarEnabled = false
+                    }
+
                     /** map取得直後に実行する処理
                      * 取得時点でバインドされているAudioEntityの位置データをもとに描画
                      * */
