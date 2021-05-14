@@ -163,23 +163,36 @@ class AudioAdapter(
                 getMapAsync { googleMap -> continuation.resume(googleMap) }
             }
 
-        private fun addStartMarker(googleMapStart: GoogleMap, latLngList: List<LatLng>) {
+        private fun addStartMarker(googleMap: GoogleMap, latLngList: List<LatLng>) {
             val startPoint = latLngList.firstOrNull() ?: return
-            googleMapStart.addMarker(
+            googleMap.addMarker(
                 MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
 //                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_on_24))
             )
-            googleMapStart.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15F))
+
+            googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(latLngList)
+                    .color(ContextCompat.getColor(playBackViewModel.getApplication(),R.color.darkGray))
+            )
+
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15F))
         }
 
 
-        private fun addEndMarker(googleMapEnd: GoogleMap, latLngList: List<LatLng>) {
+        private fun addEndMarker(googleMap: GoogleMap, latLngList: List<LatLng>) {
             val endPoint = latLngList.lastOrNull() ?: return
-            googleMapEnd.addMarker(
+            googleMap.addMarker(
                 MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
 //                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_off_24))
             )
-            googleMapEnd.moveCamera(CameraUpdateFactory.newLatLngZoom(endPoint, 15F))
+
+            googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(latLngList)
+                    .color(ContextCompat.getColor(playBackViewModel.getApplication(),R.color.darkGray))
+            )
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(endPoint, 15F))
         }
 
 

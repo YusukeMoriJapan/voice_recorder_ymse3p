@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         /** UIの初期化 */
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        title = "Audio List"
+        title = "VoiceLogger"
 
         /** コルーチン起動 */
         // metadataの変更を受け取る
