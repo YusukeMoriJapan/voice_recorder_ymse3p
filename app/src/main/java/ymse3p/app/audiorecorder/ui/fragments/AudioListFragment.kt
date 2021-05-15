@@ -2,6 +2,7 @@ package ymse3p.app.audiorecorder.ui.fragments
 
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.collect
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentAudioListBinding
+import ymse3p.app.audiorecorder.util.FilteringMode
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 
@@ -68,6 +70,8 @@ class AudioListFragment : Fragment() {
             }
         }
 
+        mainViewModel.repository.localDataSource.submitQuery("%%")
+
         return binding.root
     }
 
@@ -90,7 +94,23 @@ class AudioListFragment : Fragment() {
         inflater.inflate(R.menu.menu_main, menu)
 
         val search = menu.findItem(R.id.menu_search)
-        val searchView = search.actionView as? SearchView
+        val searchView = (search.actionView as? SearchView)
+
+        lifecycleScope.launchWhenResumed {
+            mainViewModel.filteringMode.collect { mode ->
+                when (mode) {
+                    FilteringMode.ADDRESS -> {
+                        searchView?.queryHint = "録音地点で絞込"
+                    }
+                    FilteringMode.TITLE -> {
+                        searchView?.queryHint = "タイトルで絞込"
+                    }
+                    FilteringMode.DATE -> {
+                        searchView?.queryHint = "日時で絞込"
+                    }
+                }
+            }
+        }
 
         searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -117,6 +137,32 @@ class AudioListFragment : Fragment() {
             }
             R.id.delete_all_data -> {
                 mainViewModel.deleteAllAudio()
+                true
+            }
+            R.id.search_filtering -> {
+                val menuItemView = requireActivity().findViewById<View>(R.id.search_filtering)
+                val popupMenu = PopupMenu(requireContext(), menuItemView).apply {
+                    inflate(R.menu.search_filtering_menu)
+                }
+
+                popupMenu.setOnMenuItemClickListener { searchFiltItem ->
+                    return@setOnMenuItemClickListener when (searchFiltItem.itemId) {
+                        R.id.filter_address -> {
+                            mainViewModel.filteringMode.value = FilteringMode.ADDRESS
+                            true
+                        }
+                        R.id.filter_title -> {
+                            mainViewModel.filteringMode.value = FilteringMode.TITLE
+                            true
+                        }
+                        R.id.filter_date -> {
+                            mainViewModel.filteringMode.value = FilteringMode.DATE
+                            true
+                        }
+                        else -> true
+                    }
+                }
+                popupMenu.show()
                 true
             }
             else -> super.onOptionsItemSelected(item)

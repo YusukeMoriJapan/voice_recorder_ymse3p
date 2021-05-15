@@ -54,6 +54,7 @@ class MainViewModel @Inject constructor(
     val isRecording: StateFlow<Boolean> = _isRecording
     private var currentOutputFileName: File? = null
     private var currentAudioCreatedDate: Calendar? = null
+    val filteringMode = MutableStateFlow(FilteringMode.ADDRESS)
 
     private val _isInserting = MutableSharedFlow<Boolean>()
     val isInserting: SharedFlow<Boolean> = _isInserting

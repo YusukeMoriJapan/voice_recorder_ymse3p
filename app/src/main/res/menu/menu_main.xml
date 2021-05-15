@@ -12,6 +12,14 @@
         tools:targetApi="o" />
 
     <item
+        android:id="@+id/search_filtering"
+        android:orderInCategory="97"
+        android:title="フィルタ"
+        android:icon="@drawable/ic_baseline_filter_list_24"
+        app:showAsAction="always" >
+    </item>
+
+    <item
         android:id="@+id/delete_all_data"
         android:orderInCategory="98"
         android:title="全データ削除"

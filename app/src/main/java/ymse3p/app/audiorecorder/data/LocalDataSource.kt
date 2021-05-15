@@ -10,7 +10,7 @@ import javax.inject.Inject
 class LocalDataSource @Inject constructor(
     private val audioDao: AudioDao
 ) {
-    lateinit var readAudioJob: Job
+    private lateinit var readAudioJob: Job
 
     private val publicAudioListFlow = MutableSharedFlow<List<AudioEntity>>(1)
 
@@ -18,12 +18,12 @@ class LocalDataSource @Inject constructor(
         submitQuery("%%")
     }
 
-    fun submitQuery(searchQuery: String) {
+    fun submitQuery(address: String) {
         GlobalScope.launch(Dispatchers.IO) {
             if (::readAudioJob.isInitialized) readAudioJob.cancel()
 
             readAudioJob =
-                launch { audioDao.searchAudio(searchQuery).collect { publicAudioListFlow.emit(it) } }
+                launch { audioDao.searchAudio(address).collect { publicAudioListFlow.emit(it) } }
         }
     }
 
@@ -31,8 +31,8 @@ class LocalDataSource @Inject constructor(
         return publicAudioListFlow
     }
 
-    private fun searchAudio(searchQuery: String): Flow<List<AudioEntity>> {
-        return audioDao.searchAudio(searchQuery)
+    private fun searchAudio(address: String): Flow<List<AudioEntity>> {
+        return audioDao.searchAudio(address)
     }
 
     fun readAudioFromId(id: Int): Flow<AudioEntity> {

@@ -29,6 +29,7 @@ import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
 import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.util.AudioDiffUtil
 import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
+import ymse3p.app.audiorecorder.util.ResourceUtil
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 import java.io.File
@@ -167,13 +168,25 @@ class AudioAdapter(
             val startPoint = latLngList.firstOrNull() ?: return
             googleMap.addMarker(
                 MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
-//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_on_24))
+                    .icon(
+                        BitmapDescriptorFactory.fromBitmap(
+                            ResourceUtil.getBitmap(
+                                playBackViewModel.getApplication(),
+                                R.drawable.ic_baseline_fiber_manual_record_24
+                            )
+                        )
+                    )
             )
 
             googleMap.addPolyline(
                 PolylineOptions()
                     .addAll(latLngList)
-                    .color(ContextCompat.getColor(playBackViewModel.getApplication(),R.color.darkGray))
+                    .color(
+                        ContextCompat.getColor(
+                            playBackViewModel.getApplication(),
+                            R.color.darkGray
+                        )
+                    )
             )
 
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15F))
@@ -184,13 +197,25 @@ class AudioAdapter(
             val endPoint = latLngList.lastOrNull() ?: return
             googleMap.addMarker(
                 MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
-//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_location_off_24))
+                    .icon(
+                        BitmapDescriptorFactory.fromBitmap(
+                            ResourceUtil.getBitmap(
+                                playBackViewModel.getApplication(),
+                                R.drawable.ic_baseline_stop_24
+                            )
+                        )
+                    )
             )
 
             googleMap.addPolyline(
                 PolylineOptions()
                     .addAll(latLngList)
-                    .color(ContextCompat.getColor(playBackViewModel.getApplication(),R.color.darkGray))
+                    .color(
+                        ContextCompat.getColor(
+                            playBackViewModel.getApplication(),
+                            R.color.darkGray
+                        )
+                    )
             )
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(endPoint, 15F))
         }

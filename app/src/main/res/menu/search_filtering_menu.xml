@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ymse3p.app.audiorecorder.ymse3p.app.ui.MainActivity">
+
+
+    <item
+        android:id="@+id/filter_address"
+        app:showAsAction="never"
+        android:orderInCategory="98"
+        android:title="録音地点で絞込" />
+
+    <item
+        android:id="@+id/filter_title"
+        app:showAsAction="never"
+        android:orderInCategory="99"
+        android:title="タイトルで絞込" />
+    <item
+        android:id="@+id/filter_date"
+        app:showAsAction="never"
+        android:orderInCategory="100"
+        android:title="日付で絞込" />
+</menu>

@@ -209,7 +209,8 @@
                     app:layout_constraintBottom_toBottomOf="@+id/start_location_text"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/start_location_text"
-                    app:srcCompat="@drawable/ic_baseline_location_on_24" />
+                    app:srcCompat="@drawable/ic_baseline_fiber_manual_record_24"
+                    app:tint="@color/nakabeni_dark" />
 
                 <ImageView
                     android:id="@+id/imageView2"
@@ -219,7 +220,8 @@
                     app:layout_constraintBottom_toBottomOf="@+id/start_location_text2"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/start_location_text2"
-                    app:srcCompat="@drawable/ic_baseline_location_off_24" />
+                    app:srcCompat="@drawable/ic_baseline_stop_24"
+                    app:tint="@color/descriptionColor"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

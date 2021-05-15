@@ -132,49 +132,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        menuInflater.inflate(R.menu.menu_main, menu)
-//
-//        val search = menu.findItem(R.id.menu_search)
-//        val searchView = search.actionView as? SearchView
-//
-//        searchView?.isSubmitButtonEnabled = true
-//
-//        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-//            override fun onQueryTextSubmit(query: String?): Boolean {
-//                if (query != null) {
-//
-//                }
-//                return false
-//            }
-//
-//            override fun onQueryTextChange(newText: String?): Boolean {
-//                return false
-//            }
-//
-//        })
-//        return true
-//    }
-
-
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        return when (item.itemId) {
-//            R.id.sample_data_generate -> {
-//                mainViewModel.insertSampleAudio()
-//                true
-//            }
-//            R.id.all_sample_data_delete -> {
-//                mainViewModel.deleteAllSampleAudio()
-//                true
-//            }
-//            R.id.delete_all_data -> {
-//                mainViewModel.deleteAllAudio()
-//                true
-//            }
-//            else -> super.onOptionsItemSelected(item)
-//        }
-//    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
