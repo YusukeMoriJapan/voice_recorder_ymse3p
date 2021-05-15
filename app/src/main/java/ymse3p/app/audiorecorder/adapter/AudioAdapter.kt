@@ -140,7 +140,7 @@ class AudioAdapter(
         }
 
         private fun AudioRowLayoutBinding.initializeMapView() {
-            if (!::googleMapStart.isInitialized) return
+            if (!::googleMapStart.isInitialized || !::googleMapEnd.isInitialized) return
             /** googleMapの描画処理 */
             googleMapStart.clear()
             googleMapEnd.clear()

@@ -37,7 +37,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: Repository,
+    val repository: Repository,
     application: Application,
     private val audioRecorder: MediaRecorder,
     private val dataStoreRepository: DataStoreRepository
@@ -131,8 +131,8 @@ class MainViewModel @Inject constructor(
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
 
-        val startAddress: String? = getStartAddress(savedLocationList)
-        val endAddress: String? = getEndAddress(savedLocationList)
+        val startAddress: String = getStartAddress(savedLocationList) ?: ""
+        val endAddress: String = getEndAddress(savedLocationList) ?: ""
 
         isSavingGpsList.first { isLoading ->
             if (isLoading) return@first false
@@ -163,7 +163,6 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repository.localDataSource.deleteAllAudio()
         }
-
 
     /** サンプルデータに対する操作　*/
     fun insertSampleAudio() {

@@ -18,8 +18,8 @@ class AudioEntity(
     val audioTitle: String,
     val audioDuration: Int,
     val gpsDataList: List<GpsData>?,
-    val startAddress: String? = null,
-    val endAddress: String? = null
+    val startAddress: String,
+    val endAddress: String
 ) : Parcelable {
     companion object {
         fun createAudioEntity(
@@ -28,8 +28,8 @@ class AudioEntity(
             audioTitle: String,
             audioDuration: Int,
             gpsDataList: List<GpsData>?,
-            startAddress: String? = null,
-            endAddress: String? = null
+            startAddress: String = "",
+            endAddress: String = ""
         ): AudioEntity {
             return AudioEntity(
                 0,

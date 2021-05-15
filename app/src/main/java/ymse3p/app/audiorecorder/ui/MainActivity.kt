@@ -9,14 +9,17 @@ import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
+import ymse3p.app.audiorecorder.MyApplication
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.databinding.ActivityMainBinding
 import ymse3p.app.audiorecorder.util.CannotCollectGpsLocationException
@@ -104,6 +107,20 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        binding.changeSpeedButton.setOnClickListener(object : View.OnClickListener {
+            private val playSpeedList: List<Float> =
+                listOf(1F, 1.3F, 1.5F, 1.6F, 1.7F, 1.8F, 1.9F, 2.0F)
+            private var currentIndex = 0
+
+            override fun onClick(v: View?) {
+                if (++currentIndex == playSpeedList.size)
+                    currentIndex = 0
+                (application as MyApplication).playbackSpeedFlow.value =
+                    playSpeedList[currentIndex]
+                val buttonText = "${playSpeedList[currentIndex]}" + "x"
+                (v as Button).text = buttonText
+            }
+        })
     }
 
     override fun onStart() {
@@ -115,29 +132,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
+//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+//        menuInflater.inflate(R.menu.menu_main, menu)
+//
+//        val search = menu.findItem(R.id.menu_search)
+//        val searchView = search.actionView as? SearchView
+//
+//        searchView?.isSubmitButtonEnabled = true
+//
+//        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+//            override fun onQueryTextSubmit(query: String?): Boolean {
+//                if (query != null) {
+//
+//                }
+//                return false
+//            }
+//
+//            override fun onQueryTextChange(newText: String?): Boolean {
+//                return false
+//            }
+//
+//        })
+//        return true
+//    }
 
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.sample_data_generate -> {
-                mainViewModel.insertSampleAudio()
-                true
-            }
-            R.id.all_sample_data_delete -> {
-                mainViewModel.deleteAllSampleAudio()
-                true
-            }
-            R.id.delete_all_data -> {
-                mainViewModel.deleteAllAudio()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        return when (item.itemId) {
+//            R.id.sample_data_generate -> {
+//                mainViewModel.insertSampleAudio()
+//                true
+//            }
+//            R.id.all_sample_data_delete -> {
+//                mainViewModel.deleteAllSampleAudio()
+//                true
+//            }
+//            R.id.delete_all_data -> {
+//                mainViewModel.deleteAllAudio()
+//                true
+//            }
+//            else -> super.onOptionsItemSelected(item)
+//        }
+//    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

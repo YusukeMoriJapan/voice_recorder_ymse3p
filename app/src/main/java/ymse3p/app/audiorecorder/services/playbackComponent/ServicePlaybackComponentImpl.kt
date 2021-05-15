@@ -1,13 +1,16 @@
 package ymse3p.app.audiorecorder.services.playbackComponent
 
+import android.content.Context
 import android.media.AudioManager
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import ymse3p.app.audiorecorder.MyApplication
 import ymse3p.app.audiorecorder.di.playbackmodule.servicePlaybackModule.ServiceCoroutineScope
 import ymse3p.app.audiorecorder.services.playbackComponent.components.ServicePlaybackComponentState
 import javax.inject.Inject
@@ -22,6 +26,7 @@ import javax.inject.Inject
 @ServiceScoped
 class ServicePlaybackComponentImpl
 @Inject constructor(
+    @ApplicationContext private val myApplication: Context,
     private val mediaSession: MediaSessionCompat,
     private val exoPlayer: SimpleExoPlayer,
     private val componentState: ServicePlaybackComponentState,
@@ -81,6 +86,13 @@ class ServicePlaybackComponentImpl
                 //音量を下げる
                 else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
                     mediaSession.controller.transportControls.play()
+            }
+        }
+
+        /** 倍速再生の値を受け取りEXOに反映 */
+        serviceScope.launch(Dispatchers.Main) {
+            (myApplication as MyApplication).playbackSpeedFlow.collect { playbackSpeed ->
+                exoPlayer.setPlaybackParameters(PlaybackParameters(playbackSpeed))
             }
         }
 

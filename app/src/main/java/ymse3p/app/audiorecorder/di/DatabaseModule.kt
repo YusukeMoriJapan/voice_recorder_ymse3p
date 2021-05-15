@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ymse3p.app.audiorecorder.data.database.AudioDao
 import ymse3p.app.audiorecorder.data.database.AudioDatabase
 import ymse3p.app.audiorecorder.util.Constants.Companion.DATABASE_NAME
 import javax.inject.Singleton
@@ -28,5 +29,5 @@ object DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideDao(database: AudioDatabase) = database.audioDao()
+    fun provideDao(database: AudioDatabase): AudioDao = database.audioDao()
 }

@@ -13,8 +13,11 @@ interface AudioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAudioList(audioEntityList: List<AudioEntity>)
 
-    @Query("SELECT * FROM audio_table ORDER BY id DESC")
-    fun readAudio(): Flow<List<AudioEntity>>
+//    @Query("SELECT * FROM audio_table ORDER BY id DESC")
+//    fun readAudio(): Flow<List<AudioEntity>>
+
+    @Query("SELECT * FROM audio_table WHERE startAddress LIKE :searchQuery OR endAddress LIKE :searchQuery  ORDER BY id DESC")
+    fun searchAudio(searchQuery: String): Flow<List<AudioEntity>>
 
     @Query("SELECT * FROM audio_table WHERE id = :id")
     fun readAudioFromId(id: Int): Flow<AudioEntity>

@@ -1,10 +1,9 @@
 package ymse3p.app.audiorecorder.ui.fragments
 
 import android.os.Bundle
+import android.view.*
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -60,6 +59,8 @@ class AudioListFragment : Fragment() {
         setupRecyclerView()
         readDatabase()
 
+        setHasOptionsMenu(true)
+
         onCreateViewJob = lifecycleScope.launchWhenCreated {
             mainViewModel.isInserting.collect { isInserting ->
                 if (isInserting) showShimmerEffect()
@@ -74,12 +75,52 @@ class AudioListFragment : Fragment() {
         super.onDestroyView()
         if (::onCreateViewJob.isInitialized) onCreateViewJob.cancel()
         mAdapter.clearContextualActionMode()
+        _binding = null
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
         mAdapter.viewHolders.forEach { viewHolder ->
             viewHolder.binding.rowMapViewStart.onDestroy()
             viewHolder.binding.rowMapViewEnd.onDestroy()
         }
-        _binding = null
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_main, menu)
+
+        val search = menu.findItem(R.id.menu_search)
+        val searchView = search.actionView as? SearchView
+
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(query: String?): Boolean {
+                if (query != null)
+                    mainViewModel.repository.localDataSource.submitQuery("%${query}%")
+                return false
+            }
+        })
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.sample_data_generate -> {
+                mainViewModel.insertSampleAudio()
+                true
+            }
+            R.id.all_sample_data_delete -> {
+                mainViewModel.deleteAllSampleAudio()
+                true
+            }
+            R.id.delete_all_data -> {
+                mainViewModel.deleteAllAudio()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
 
