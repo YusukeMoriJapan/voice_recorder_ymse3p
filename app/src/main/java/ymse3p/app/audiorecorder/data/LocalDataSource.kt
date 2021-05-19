@@ -18,12 +18,14 @@ class LocalDataSource @Inject constructor(
         submitQuery("%%")
     }
 
-    fun submitQuery(address: String) {
+    fun submitQuery(address: String? = null, title: String? = null) {
         GlobalScope.launch(Dispatchers.IO) {
             if (::readAudioJob.isInitialized) readAudioJob.cancel()
 
             readAudioJob =
-                launch { audioDao.searchAudio(address).collect { publicAudioListFlow.emit(it) } }
+                launch {
+                    audioDao.searchAudio(address, title).collect { publicAudioListFlow.emit(it) }
+                }
         }
     }
 

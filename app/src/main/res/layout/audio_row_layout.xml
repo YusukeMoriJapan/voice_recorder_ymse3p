@@ -36,26 +36,6 @@
                 android:layout_height="wrap_content"
                 android:background="@color/cardBackgroundColor">
 
-                <View
-                    android:id="@+id/start_map_background"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:background="#E6E6E6"
-                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_start"
-                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_start"
-                    app:layout_constraintStart_toStartOf="@+id/row_map_view_start"
-                    app:layout_constraintTop_toTopOf="@+id/row_map_view_start" />
-
-                <View
-                    android:id="@+id/end_map_background"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:background="#E6E6E6"
-                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_end"
-                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_end"
-                    app:layout_constraintStart_toStartOf="@+id/row_map_view_end"
-                    app:layout_constraintTop_toTopOf="@+id/row_map_view_end" />
-
                 <com.google.android.gms.maps.MapView
                     android:id="@+id/row_map_view_start"
                     android:layout_width="0dp"
@@ -79,6 +59,28 @@
                     app:layout_constraintStart_toStartOf="@+id/guideline2"
                     app:layout_constraintTop_toBottomOf="@+id/play_float_button"
                     app:liteMode="true" />
+
+                <View
+                    android:id="@+id/start_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    android:clickable="true"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_start"
+                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_start"
+                    app:layout_constraintStart_toStartOf="@+id/row_map_view_start"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_start" />
+
+                <View
+                    android:id="@+id/end_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    android:clickable="true"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_end"
+                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_end"
+                    app:layout_constraintStart_toStartOf="@+id/row_map_view_end"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_end" />
 
                 <View
                     android:id="@+id/center_line"
@@ -221,7 +223,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/start_location_text2"
                     app:srcCompat="@drawable/ic_baseline_stop_24"
-                    app:tint="@color/descriptionColor"/>
+                    app:tint="@color/descriptionColor" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

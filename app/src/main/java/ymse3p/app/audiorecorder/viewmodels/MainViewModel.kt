@@ -192,7 +192,9 @@ class MainViewModel @Inject constructor(
                     audioCreateDate,
                     "録音データ${it}",
                     audioDuration,
-                    sampleJson
+                    sampleJson,
+                    "日本、〒036-1343 青森県弘前市百沢東岩木山 津軽岩木スカイライン",
+                    "日本、〒036-1343 青森県弘前市百沢東岩木山 津軽岩木スカイライン"
                 )
             }
             repository.localDataSource.insertAudioList(audioList)

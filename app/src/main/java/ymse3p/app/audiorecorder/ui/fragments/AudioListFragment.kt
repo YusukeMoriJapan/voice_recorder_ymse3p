@@ -119,7 +119,20 @@ class AudioListFragment : Fragment() {
 
             override fun onQueryTextChange(query: String?): Boolean {
                 if (query != null)
-                    mainViewModel.repository.localDataSource.submitQuery("%${query}%")
+
+                    mainViewModel.repository.localDataSource.apply {
+                        when (mainViewModel.filteringMode.value) {
+                            FilteringMode.ADDRESS -> {
+                                submitQuery(address = "%${query}%")
+                            }
+                            FilteringMode.TITLE -> {
+                                submitQuery(title = "%${query}%")
+                            }
+                            FilteringMode.DATE -> {
+
+                            }
+                        }
+                    }
                 return false
             }
         })
@@ -145,8 +158,8 @@ class AudioListFragment : Fragment() {
                     inflate(R.menu.search_filtering_menu)
                 }
 
-                popupMenu.setOnMenuItemClickListener { searchFiltItem ->
-                    return@setOnMenuItemClickListener when (searchFiltItem.itemId) {
+                popupMenu.setOnMenuItemClickListener { searchFilterItem ->
+                    return@setOnMenuItemClickListener when (searchFilterItem.itemId) {
                         R.id.filter_address -> {
                             mainViewModel.filteringMode.value = FilteringMode.ADDRESS
                             true

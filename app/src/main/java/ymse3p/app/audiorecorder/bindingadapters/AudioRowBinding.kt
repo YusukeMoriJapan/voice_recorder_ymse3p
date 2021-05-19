@@ -3,6 +3,7 @@ package ymse3p.app.audiorecorder.bindingadapters
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
+import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 
@@ -41,7 +42,14 @@ class AudioRowBinding {
                 return
             }
             try {
-                textView.text = splintedAddress[1]
+                val stringBuilder = StringBuilder()
+
+                splintedAddress.forEachIndexed { index, s ->
+                    if (index == 0) return@forEachIndexed
+                    stringBuilder.append(s)
+                }
+
+                textView.text = stringBuilder.toString()
             } catch (e: IndexOutOfBoundsException) {
                 textView.text = "位置情報は保存されていません"
                 return
