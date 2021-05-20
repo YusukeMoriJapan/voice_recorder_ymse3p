@@ -105,7 +105,7 @@ class MapsFragment : Fragment() {
                 nearestGpsIndex = index
             }
         }
-        Log.d("index",nearestGpsIndex.toString())
+        Log.d("index", nearestGpsIndex.toString())
         return nearestGpsIndex
     }
 
@@ -123,7 +123,7 @@ class MapsFragment : Fragment() {
             currentMarker =
                 addMarker(MarkerOptions().position(nearestLatLng).title("現在地"))
             /** カメラをMarkerに移動する */
-            moveCamera(CameraUpdateFactory.newLatLng(nearestLatLng))
+            animateCamera(CameraUpdateFactory.newLatLng(nearestLatLng), 500, null)
         }
     }
 

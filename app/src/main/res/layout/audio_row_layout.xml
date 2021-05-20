@@ -28,7 +28,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:strokeColor="@color/strokeColor"
-            app:strokeWidth="1dp">
+            app:strokeWidth="2dp">
 
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -36,30 +36,93 @@
                 android:layout_height="wrap_content"
                 android:background="@color/cardBackgroundColor">
 
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/row_map_view_start"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="1dp"
+                    app:layout_constraintEnd_toStartOf="@+id/guideline2"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/play_float_button"
+                    app:liteMode="true" />
+
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/row_map_view_end"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_marginStart="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/guideline2"
+                    app:layout_constraintTop_toBottomOf="@+id/play_float_button"
+                    app:liteMode="true" />
+
+                <View
+                    android:id="@+id/start_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    android:clickable="true"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_start"
+                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_start"
+                    app:layout_constraintStart_toStartOf="@+id/row_map_view_start"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_start" />
+
+                <View
+                    android:id="@+id/end_map_background"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#E6E6E6"
+                    android:clickable="true"
+                    app:layout_constraintBottom_toBottomOf="@+id/row_map_view_end"
+                    app:layout_constraintEnd_toEndOf="@+id/row_map_view_end"
+                    app:layout_constraintStart_toStartOf="@+id/row_map_view_end"
+                    app:layout_constraintTop_toTopOf="@+id/row_map_view_end" />
+
+                <View
+                    android:id="@+id/center_line"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.1dp"
+                    android:background="@android:color/darker_gray"
+                    android:visibility="invisible"
+                    app:layout_constraintBottom_toBottomOf="@+id/play_float_button"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/play_float_button" />
+
                 <TextView
                     android:id="@+id/audio_title_row"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginBottom="2dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="@{audioEntity.audioTitle}"
+                    setAudioTitle="@{audioEntity}"
                     android:textColor="@color/titleColor"
                     android:textSize="18sp"
-                    app:layout_constraintBottom_toTopOf="@+id/guideline2"
+                    app:layout_constraintBottom_toTopOf="@+id/center_line"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
                     tools:text="タイトル名" />
 
+
                 <TextView
                     android:id="@+id/audio_date"
+                    setAudioCreatedDate="@{audioEntity}"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="2dp"
-                    android:textColor="@color/descriptionColor"
+                    android:layout_marginTop="4dp"
                     android:text="     "
-                    setAudioCreatedDate="@{audioEntity}"
+                    android:textColor="@color/descriptionColor"
                     app:layout_constraintStart_toEndOf="@+id/audio_duration"
-                    app:layout_constraintTop_toTopOf="@+id/guideline2"
+                    app:layout_constraintTop_toBottomOf="@+id/center_line"
                     tools:text="2020/12/18" />
 
                 <TextView
@@ -68,11 +131,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="2dp"
-                    android:textColor="@color/descriptionColor"
+                    android:layout_marginTop="4dp"
                     android:text="     "
+                    android:textColor="@color/descriptionColor"
                     app:layout_constraintStart_toEndOf="@+id/play_float_button"
-                    app:layout_constraintTop_toTopOf="@+id/guideline2"
+                    app:layout_constraintTop_toBottomOf="@+id/center_line"
                     tools:text="01:35:10" />
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -82,6 +145,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
                     android:clickable="true"
+                    app:elevation="0dp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:srcCompat="@drawable/ic_baseline_play_arrow_24" />
@@ -89,17 +153,79 @@
                 <TextView
                     android:id="@+id/blank_audio_row"
                     android:layout_width="0dp"
-                    android:layout_height="16dp"
+                    android:layout_height="4dp"
+                    android:visibility="gone"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/play_float_button" />
+                    app:layout_constraintTop_toBottomOf="@+id/audio_date" />
+
+                <TextView
+                    android:id="@+id/blank_audio_row_top"
+                    android:layout_width="0dp"
+                    android:layout_height="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/imageView2" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/guideline2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     app:layout_constraintGuide_percent="0.5" />
+
+                <TextView
+                    android:id="@+id/start_location_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/descriptionColor"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/start_loc_icon"
+                    app:layout_constraintTop_toBottomOf="@+id/row_map_view_start"
+                    app:setAddress="@{audioEntity.startAddress}" />
+
+                <TextView
+                    android:id="@+id/start_location_text2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/descriptionColor"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/imageView2"
+                    app:layout_constraintTop_toBottomOf="@+id/start_location_text"
+                    app:setAddress="@{audioEntity.endAddress}" />
+
+                <ImageView
+                    android:id="@+id/start_loc_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/start_location_text"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/start_location_text"
+                    app:srcCompat="@drawable/ic_baseline_fiber_manual_record_24"
+                    app:tint="@color/nakabeni_dark" />
+
+                <ImageView
+                    android:id="@+id/imageView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/start_location_text2"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/start_location_text2"
+                    app:srcCompat="@drawable/ic_baseline_stop_24"
+                    app:tint="@color/descriptionColor" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
 

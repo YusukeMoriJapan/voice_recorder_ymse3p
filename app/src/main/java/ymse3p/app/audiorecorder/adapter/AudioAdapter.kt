@@ -7,23 +7,33 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.data.database.entities.AudioEntity
 import ymse3p.app.audiorecorder.databinding.AudioRowLayoutBinding
+import ymse3p.app.audiorecorder.models.GpsData
 import ymse3p.app.audiorecorder.util.AudioDiffUtil
 import ymse3p.app.audiorecorder.util.Constants.Companion.MEDIA_METADATA_QUEUE
+import ymse3p.app.audiorecorder.util.ResourceUtil
 import ymse3p.app.audiorecorder.viewmodels.MainViewModel
 import ymse3p.app.audiorecorder.viewmodels.playbackViewModel.PlayBackViewModel
 import java.io.File
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
+
 
 class AudioAdapter(
     private val mainViewModel: MainViewModel,
@@ -39,7 +49,7 @@ class AudioAdapter(
     private var audio = emptyList<AudioEntity>()
 
     /** 生成されたViewHolderを保持 */
-    private val viewHolders = mutableListOf<MyViewHolder>()
+    val viewHolders = mutableListOf<MyViewHolder>()
 
     /** ユーザーがシングルクリックした音源データ */
     val selectedAudioEntity = MutableSharedFlow<AudioEntity>()
@@ -49,11 +59,54 @@ class AudioAdapter(
     private var multiSelection = false
     private var selectedAudioList = arrayListOf<AudioEntity>()
 
-    class MyViewHolder(
+    inner class MyViewHolder(
         val binding: AudioRowLayoutBinding,
         private val playBackViewModel: PlayBackViewModel,
         var currentPosition: Int? = null,
+        private val fragmentCoroutineScope: LifecycleCoroutineScope
     ) : RecyclerView.ViewHolder(binding.root) {
+
+        private lateinit var googleMapStart: GoogleMap
+        private lateinit var googleMapEnd: GoogleMap
+
+        init {
+            fragmentCoroutineScope.launchWhenCreated { withContext(Dispatchers.Default) { getGoogleMaps() } }
+        }
+
+        private suspend fun getGoogleMaps() {
+            withContext(Dispatchers.Main) {
+                googleMapStart = binding.rowMapViewStart.getMapSuspend().apply {
+                    uiSettings.isMapToolbarEnabled = false
+                }
+                googleMapEnd = binding.rowMapViewEnd.getMapSuspend().apply {
+                    uiSettings.isMapToolbarEnabled = false
+                }
+
+                binding.startMapBackground.setOnClickListener { moveToMapFragment() }
+                binding.endMapBackground.setOnClickListener { moveToMapFragment() }
+
+                /** map取得直後に実行する処理
+                 * 取得時点でバインドされているAudioEntityの位置データをもとに描画
+                 * */
+                binding.audioEntity?.gpsDataList?.run {
+                    val latLngList = gpsDataToLatLng(this)
+                    addStartMarker(googleMapStart, latLngList)
+                    addEndMarker(googleMapEnd, latLngList)
+                }
+
+                binding.startMapBackground.alpha = 0F
+                binding.endMapBackground.alpha = 0F
+            }
+
+        }
+
+        private fun moveToMapFragment(): Job =
+            fragmentCoroutineScope.launchWhenResumed {
+                currentPosition?.let { playBackViewModel.skipToQueueItem(it.toLong()) }
+                binding.audioEntity?.let { selectedAudioEntity.emit(it) }
+                cancel()
+            }
+
 
         fun bind(audioEntity: AudioEntity, position: Int) {
             currentPosition = position
@@ -88,24 +141,117 @@ class AudioAdapter(
             }
 
             binding.audioEntity = audioEntity
+            binding.initializeMapView()
             binding.executePendingBindings()
         }
 
-        companion object {
-            fun factory(
-                parent: ViewGroup,
-                playBackViewModel: PlayBackViewModel,
-            ): MyViewHolder {
-                val layoutInflater = LayoutInflater.from(parent.context)
-                val binding = AudioRowLayoutBinding.inflate(layoutInflater, parent, false)
-                return MyViewHolder(binding, playBackViewModel)
+        private fun AudioRowLayoutBinding.initializeMapView() {
+            if (!::googleMapStart.isInitialized || !::googleMapEnd.isInitialized) return
+            /** googleMapの描画処理 */
+            googleMapStart.clear()
+            googleMapEnd.clear()
+
+            binding.rowMapViewStart.visibility = View.INVISIBLE
+            binding.rowMapViewEnd.visibility = View.INVISIBLE
+
+            binding.audioEntity?.gpsDataList?.run {
+                val latLngList = gpsDataToLatLng(this)
+                addStartMarker(googleMapStart, latLngList)
+                addEndMarker(googleMapEnd, latLngList)
             }
+
+            binding.rowMapViewStart.visibility = View.VISIBLE
+            binding.rowMapViewEnd.visibility = View.VISIBLE
+        }
+
+        private suspend fun MapView.getMapSuspend(): GoogleMap =
+            suspendCoroutine { continuation ->
+                getMapAsync { googleMap -> continuation.resume(googleMap) }
+            }
+
+        private fun addStartMarker(googleMap: GoogleMap, latLngList: List<LatLng>) {
+            val startPoint = latLngList.firstOrNull() ?: return
+            googleMap.addMarker(
+                MarkerOptions().position(startPoint).anchor(0.5F, 0.5F)
+                    .icon(
+                        BitmapDescriptorFactory.fromBitmap(
+                            ResourceUtil.getBitmap(
+                                playBackViewModel.getApplication(),
+                                R.drawable.ic_baseline_fiber_manual_record_24
+                            )
+                        )
+                    )
+            )
+
+            googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(latLngList)
+                    .color(
+                        ContextCompat.getColor(
+                            playBackViewModel.getApplication(),
+                            R.color.darkGray
+                        )
+                    )
+            )
+
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startPoint, 15F))
+        }
+
+
+        private fun addEndMarker(googleMap: GoogleMap, latLngList: List<LatLng>) {
+            val endPoint = latLngList.lastOrNull() ?: return
+            googleMap.addMarker(
+                MarkerOptions().position(endPoint).anchor(0.5F, 0.5F)
+                    .icon(
+                        BitmapDescriptorFactory.fromBitmap(
+                            ResourceUtil.getBitmap(
+                                playBackViewModel.getApplication(),
+                                R.drawable.ic_baseline_stop_24
+                            )
+                        )
+                    )
+            )
+
+            googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(latLngList)
+                    .color(
+                        ContextCompat.getColor(
+                            playBackViewModel.getApplication(),
+                            R.color.darkGray
+                        )
+                    )
+            )
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(endPoint, 15F))
+        }
+
+
+        private fun gpsDataToLatLng(gpsDataList: List<GpsData>): List<LatLng> {
+            val latLngList = mutableListOf<LatLng>()
+            gpsDataList.forEach { gpsData ->
+                latLngList.add(LatLng(gpsData.latitude, gpsData.longitude))
+            }
+            return latLngList
         }
     }
 
+    private fun createDataBinding(parent: ViewGroup): AudioRowLayoutBinding {
+        val layoutInflater = LayoutInflater.from(parent.context)
+        val binding = AudioRowLayoutBinding.inflate(layoutInflater, parent, false)
+        binding.rowMapViewStart.onCreate(null)
+        binding.rowMapViewEnd.onCreate(null)
+
+        return binding
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val viewHolder = MyViewHolder.factory(parent, playBackViewModel)
+        val binding = createDataBinding(parent)
+        val viewHolder =
+            MyViewHolder(
+                binding,
+                playBackViewModel,
+                fragmentCoroutineScope = requireActivity.lifecycleScope
+            )
         viewHolders.add(viewHolder)
         return viewHolder
     }
@@ -116,19 +262,16 @@ class AudioAdapter(
 
         saveItemStateOnScroll(currentAudio, holder)
 
+        /** 現在地をLiteModeで表示させる場合は、onResumeとonPauseの呼び出しが必要 */
+//        holder.binding.rowMapView.onResume()
+
         holder.binding.audioRowLayout.setOnClickListener {
             when {
                 multiSelection ->
                     applySelection(holder, currentAudio)
-                currentAudio.gpsDataList == null ->
-                    showSnackBar("この録音データに位置情報は保存されていません")
-                else ->
-                    launch {
-                        holder.currentPosition?.let { playBackViewModel.skipToQueueItem(it.toLong()) }
-                        selectedAudioEntity.emit(currentAudio)
-                    }
             }
         }
+
         holder.binding.audioRowLayout.setOnLongClickListener {
             if (!multiSelection) {
                 multiSelection = true
@@ -165,7 +308,12 @@ class AudioAdapter(
         }
         launch {
             playBackViewModel.playbackState.collect { playbackState ->
-                viewHolders.forEach { viewHolder -> changePlaybackIcon(playbackState, viewHolder) }
+                viewHolders.forEach { viewHolder ->
+                    changePlaybackIcon(
+                        playbackState,
+                        viewHolder
+                    )
+                }
             }
         }
     }
@@ -180,7 +328,10 @@ class AudioAdapter(
         }
     }
 
-    private fun changePlaybackIcon(playbackState: PlaybackStateCompat?, viewHolder: MyViewHolder) {
+    private fun changePlaybackIcon(
+        playbackState: PlaybackStateCompat?,
+        viewHolder: MyViewHolder
+    ) {
         viewHolder.binding.run {
             if (playbackState?.state != PlaybackStateCompat.STATE_PLAYING) {
                 playFloatButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)

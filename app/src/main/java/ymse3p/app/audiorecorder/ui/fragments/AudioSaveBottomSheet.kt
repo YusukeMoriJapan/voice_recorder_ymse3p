@@ -33,31 +33,30 @@ class AudioSaveBottomSheet : BottomSheetDialogFragment() {
         _binding = FragmentAudioSaveBottomSheetBinding.inflate(inflater, container, false)
 
         binding.audioSaveButton.setOnClickListener {
-            validateInputTitle()?.let { validatedInputTitle ->
-                mainViewModel.insertAudio(validatedInputTitle)
+            mainViewModel.insertAudio(validateInputTitle())
 
-                Snackbar.make(requireActivity().window.decorView.findViewById(R.id.main_activity_snack_bar),
-                    "保存に成功しました",
-                    Snackbar.LENGTH_SHORT
-                ).setAction("OK") {}.show()
+            Snackbar.make(
+                requireActivity().window.decorView.findViewById(R.id.main_activity_snack_bar),
+                "保存に成功しました",
+                Snackbar.LENGTH_SHORT
+            ).setAction("OK") {}.show()
 
-                val action =
-                    AudioSaveBottomSheetDirections.actionAudioSaveBottomSheetToFirstFragment()
-                findNavController().navigate(action)
-                return@setOnClickListener
-            }
+            val action =
+                AudioSaveBottomSheetDirections.actionAudioSaveBottomSheetToFirstFragment()
+            findNavController().navigate(action)
+            return@setOnClickListener
         }
         return binding.root
     }
 
-    private fun validateInputTitle(): String? {
+    private fun validateInputTitle(): String {
         val titleInput: String? = binding.textInputAudioTitle.editText?.run {
             text.toString().trim()
         }
 
         return if (titleInput.isNullOrEmpty()) {
-            binding.textInputAudioTitle.error = "タイトルを入力してください"
-            null
+//            binding.textInputAudioTitle.error = "タイトルを入力してください"
+            ""
         } else {
             binding.textInputAudioTitle.apply {
                 error = null

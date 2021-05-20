@@ -17,17 +17,30 @@ class AudioEntity(
     val audioCreateDate: Calendar,
     val audioTitle: String,
     val audioDuration: Int,
-    val gpsDataList: List<GpsData>?
-):Parcelable {
+    val gpsDataList: List<GpsData>?,
+    val startAddress: String,
+    val endAddress: String
+) : Parcelable {
     companion object {
         fun createAudioEntity(
             audioUri: Uri,
             audioCreateDate: Calendar,
             audioTitle: String,
             audioDuration: Int,
-            gpsDataList: List<GpsData>?
+            gpsDataList: List<GpsData>?,
+            startAddress: String = "",
+            endAddress: String = ""
         ): AudioEntity {
-            return AudioEntity(0, audioUri, audioCreateDate, audioTitle, audioDuration, gpsDataList)
+            return AudioEntity(
+                0,
+                audioUri,
+                audioCreateDate,
+                audioTitle,
+                audioDuration,
+                gpsDataList,
+                startAddress,
+                endAddress
+            )
         }
     }
 }

@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
@@ -35,7 +37,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: Repository,
+    val repository: Repository,
     application: Application,
     private val audioRecorder: MediaRecorder,
     private val dataStoreRepository: DataStoreRepository
@@ -52,9 +54,10 @@ class MainViewModel @Inject constructor(
     val isRecording: StateFlow<Boolean> = _isRecording
     private var currentOutputFileName: File? = null
     private var currentAudioCreatedDate: Calendar? = null
+    val filteringMode = MutableStateFlow(FilteringMode.ADDRESS)
 
-    private val _isInserting = MutableStateFlow(false)
-    val isInserting: StateFlow<Boolean> = _isInserting
+    private val _isInserting = MutableSharedFlow<Boolean>()
+    val isInserting: SharedFlow<Boolean> = _isInserting
 
 
     /** 録音処理(Media Recorderに対する処理) */
@@ -119,7 +122,7 @@ class MainViewModel @Inject constructor(
     fun insertAudio(
         audioTitle: String,
     ) = viewModelScope.launch(Dispatchers.IO) {
-        _isInserting.value = true
+        _isInserting.emit(true)
         val audioDuration = try {
             MediaMetadataRetriever().run {
                 setDataSource(currentOutputFileName?.path)
@@ -128,6 +131,9 @@ class MainViewModel @Inject constructor(
         } catch (e: NumberFormatException) {
             Log.e("MediaMetadataRetriever", e.message.orEmpty() + "/n" + e.stackTraceToString())
         }
+
+        val startAddress: String = getStartAddress(savedLocationList) ?: ""
+        val endAddress: String = getEndAddress(savedLocationList) ?: ""
 
         isSavingGpsList.first { isLoading ->
             if (isLoading) return@first false
@@ -138,13 +144,15 @@ class MainViewModel @Inject constructor(
                     currentAudioCreatedDate ?: Calendar.getInstance(),
                     audioTitle,
                     audioDuration,
-                    savedGpsDataList
+                    savedGpsDataList,
+                    startAddress,
+                    endAddress
                 )
             repository.localDataSource.insertAudio(audioEntity)
             currentOutputFileName = null
             return@first true
         }
-        _isInserting.value = false
+        _isInserting.emit(false)
     }
 
     fun deleteAudio(audioEntity: AudioEntity) =
@@ -157,11 +165,10 @@ class MainViewModel @Inject constructor(
             repository.localDataSource.deleteAllAudio()
         }
 
-
     /** サンプルデータに対する操作　*/
     fun insertSampleAudio() {
         viewModelScope.launch(Dispatchers.IO) {
-            _isInserting.value = true
+            _isInserting.emit(true)
             val sampleUri =
                 Uri.parse("android.resource://${this@MainViewModel.getApplication<Application>().packageName}/" + R.raw.sample_audio)
             val audioCreateDate = Calendar.getInstance().apply { time = Date(0) }
@@ -185,11 +192,13 @@ class MainViewModel @Inject constructor(
                     audioCreateDate,
                     "録音データ${it}",
                     audioDuration,
-                    sampleJson
+                    sampleJson,
+                    "日本、〒036-1343 青森県弘前市百沢東岩木山 津軽岩木スカイライン",
+                    "日本、〒036-1343 青森県弘前市百沢東岩木山 津軽岩木スカイライン"
                 )
             }
             repository.localDataSource.insertAudioList(audioList)
-            _isInserting.value = false
+            _isInserting.emit(false)
         }
 
 
@@ -204,8 +213,55 @@ class MainViewModel @Inject constructor(
         audioRecorder.release()
     }
 
-
     /** Location */
+    private fun getStartAddress(locationList: List<Location>): String? {
+        val strAddress = StringBuffer()
+        val gCoder = Geocoder(getApplication(), Locale.getDefault())
+
+        val startLoc: Location = locationList.firstOrNull() ?: return null
+
+        return try {
+            val startAddressList =
+                gCoder.getFromLocation(startLoc.latitude, startLoc.longitude, 1)
+
+            addressToString(startAddressList, strAddress)
+        } catch (e: IOException) {
+            Log.e("Geocoder", e.stackTrace.toString())
+            null
+        }
+    }
+
+    private fun getEndAddress(locationList: List<Location>): String? {
+        val strAddress = StringBuffer()
+        val gCoder = Geocoder(getApplication(), Locale.getDefault())
+
+        val endLoc: Location = locationList.lastOrNull() ?: return null
+
+        return try {
+            val endAddressList =
+                gCoder.getFromLocation(endLoc.latitude, endLoc.longitude, 1)
+
+            addressToString(endAddressList, strAddress)
+        } catch (e: IOException) {
+            Log.e("Geocoder", e.stackTrace.toString())
+            null
+        }
+    }
+
+    private fun addressToString(
+        addressList: List<Address>,
+        strAddress: StringBuffer
+    ): String? {
+        val address: Address = addressList.firstOrNull() ?: return null
+
+        val maxLineIndex = address.maxAddressLineIndex
+        for (i in 0..maxLineIndex) {
+            strAddress.append(address.getAddressLine(i))
+        }
+        return strAddress.toString()
+    }
+
+    /** Pathway */
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val savedLocationList = mutableListOf<Location>()
     private var savedGpsDataList = mutableListOf<GpsData>()
