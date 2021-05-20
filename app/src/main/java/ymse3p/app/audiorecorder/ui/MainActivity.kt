@@ -95,6 +95,18 @@ class MainActivity : AppCompatActivity() {
         /** 再生用UIの設定 */
         binding.buttonPrev.setOnClickListener { playbackViewModel.skipToPrev() }
         binding.buttonNext.setOnClickListener { playbackViewModel.skipToNext() }
+
+        binding.replay10Button.setOnClickListener {
+            val currentPos = playbackViewModel.playbackState.replayCache.firstOrNull()?.position
+                ?: return@setOnClickListener
+            playbackViewModel.seekTo(currentPos - 10000)
+        }
+        binding.forward10Button.setOnClickListener {
+            val currentPos = playbackViewModel.playbackState.replayCache.firstOrNull()?.position
+                ?: return@setOnClickListener
+            playbackViewModel.seekTo(currentPos + 10000)
+        }
+
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
             }

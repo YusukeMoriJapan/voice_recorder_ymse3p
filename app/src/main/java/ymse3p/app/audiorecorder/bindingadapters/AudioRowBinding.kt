@@ -10,6 +10,15 @@ import java.util.concurrent.TimeUnit
 class AudioRowBinding {
 
     companion object {
+
+        @BindingAdapter("setAudioTitle")
+        @JvmStatic
+        fun setAudioTitle(textView: TextView, audioEntity: AudioEntity) {
+            val audioTitle = audioEntity.audioTitle
+            if (audioTitle == "") textView.text = "タイトルなし"
+            else textView.text = audioTitle
+        }
+
         @BindingAdapter("setAudioDuration")
         @JvmStatic
         fun setAudioDuration(textView: TextView, audioEntity: AudioEntity) {
