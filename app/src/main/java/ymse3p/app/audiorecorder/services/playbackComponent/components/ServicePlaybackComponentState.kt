@@ -112,7 +112,7 @@ class ServicePlaybackComponentState @Inject constructor(
                         )
                         .putString(
                             MediaMetadataCompat.METADATA_KEY_ALBUM,
-                            "ボイスレコーダー"
+                            "VoiceLogger"
                         )
                         /**アーティスト名・ジャンル名はWEAR上で表示するために設定必須。
                          設定なしだと、Wear上に再生状態が表示されない！ */

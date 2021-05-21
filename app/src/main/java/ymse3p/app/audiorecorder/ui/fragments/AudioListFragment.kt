@@ -117,9 +117,9 @@ class AudioListFragment : Fragment() {
                 return false
             }
 
-            override fun onQueryTextChange(query: String?): Boolean {
+            override fun onQueryTextChange(rawQuery: String?): Boolean {
+                val query = rawQuery?.trim()
                 if (query != null)
-
                     mainViewModel.repository.localDataSource.apply {
                         when (mainViewModel.filteringMode.value) {
                             FilteringMode.ADDRESS -> {
