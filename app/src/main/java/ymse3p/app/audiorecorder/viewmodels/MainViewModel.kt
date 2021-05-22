@@ -40,7 +40,7 @@ class MainViewModel @Inject constructor(
     val repository: Repository,
     application: Application,
     private val audioRecorder: MediaRecorder,
-    private val dataStoreRepository: DataStoreRepository
+    val dataStoreRepository: DataStoreRepository
 ) : AndroidViewModel(application) {
 
     /** ROOM DATABASE */

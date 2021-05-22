@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.adapter.AudioAdapter
 import ymse3p.app.audiorecorder.databinding.FragmentAudioListBinding
@@ -52,8 +53,15 @@ class AudioListFragment : Fragment() {
             }
         }
 
-//        if (findNavController().currentDestination?.id == R.id.FirstFragment)
-//            findNavController().navigate(R.id.action_FirstFragment_to_viewPagerFragment)
+        lifecycleScope.launchWhenCreated {
+            mainViewModel.dataStoreRepository.isFirstLaunch.first {
+                if (it == null || it == true)
+                    if (findNavController().currentDestination?.id == R.id.FirstFragment)
+                        findNavController().navigate(R.id.action_FirstFragment_to_viewPagerFragment)
+                true
+            }
+        }
+
     }
 
     override fun onCreateView(

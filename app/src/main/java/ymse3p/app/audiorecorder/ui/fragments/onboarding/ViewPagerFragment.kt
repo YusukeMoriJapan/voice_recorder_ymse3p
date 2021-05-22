@@ -1,11 +1,16 @@
 package ymse3p.app.audiorecorder.ui.fragments.onboarding
 
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.viewpager2.widget.ViewPager2
 import ymse3p.app.audiorecorder.R
 import ymse3p.app.audiorecorder.ui.fragments.onboarding.screens.FirstOnBoardFragment
@@ -38,7 +43,12 @@ class ViewPagerFragment : Fragment() {
                 lifecycle
             )
 
-        rootView.findViewById<ViewPager2>(R.id.view_pager).adapter = adapter
+        /** Handlerを介さずにViewPagerにアクセスすると実行時例外発生する */
+        Handler(Looper.getMainLooper()).post {
+            rootView.findViewById<ViewPager2>(R.id.view_pager).adapter = adapter
+        }
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         return rootView
     }
