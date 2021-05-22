@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/FirstFragment"
-        android:name="ymse3p.app.audiorecorder.ui.fragments.AudioListFragment"
+        android:name="ymse3p.app.voicelogger.ui.fragments.AudioListFragment"
         android:label="@string/first_fragment_label"
         tools:layout="@layout/fragment_audio_list">
         <action
@@ -26,7 +26,7 @@
     </fragment>
     <dialog
         android:id="@+id/audioSaveBottomSheet"
-        android:name="ymse3p.app.audiorecorder.ui.fragments.AudioSaveBottomSheet"
+        android:name="ymse3p.app.voicelogger.ui.fragments.AudioSaveBottomSheet"
         android:label="AudioSaveBottomSheet"
         tools:layout="@layout/fragment_audio_save_bottom_sheet">
         <action
@@ -40,12 +40,12 @@
         app:destination="@id/audioSaveBottomSheet" />
     <fragment
         android:id="@+id/mapsFragment"
-        android:name="ymse3p.app.audiorecorder.ui.fragments.MapsFragment"
+        android:name="ymse3p.app.voicelogger.ui.fragments.MapsFragment"
         android:label="fragment_maps"
         tools:layout="@layout/fragment_maps">
         <argument
             android:name="audioEntity"
-            app:argType="ymse3p.app.audiorecorder.data.database.entities.AudioEntity" />
+            app:argType="ymse3p.app.voicelogger.data.database.entities.AudioEntity" />
         <action
             android:id="@+id/action_mapsFragment_to_FirstFragment"
             app:destination="@id/FirstFragment"
@@ -58,7 +58,7 @@
     </fragment>
     <fragment
         android:id="@+id/viewPagerFragment"
-        android:name="ymse3p.app.audiorecorder.ui.fragments.onboarding.ViewPagerFragment"
+        android:name="ymse3p.app.voicelogger.ui.fragments.onboarding.ViewPagerFragment"
         android:label="fragment_view_pager"
         tools:layout="@layout/fragment_view_pager" >
         <action

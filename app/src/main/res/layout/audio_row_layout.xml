@@ -7,7 +7,7 @@
 
         <variable
             name="audioEntity"
-            type="ymse3p.app.audiorecorder.data.database.entities.AudioEntity" />
+            type="ymse3p.app.voicelogger.data.database.entities.AudioEntity" />
 
     </data>
 
