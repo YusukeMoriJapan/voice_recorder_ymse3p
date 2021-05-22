@@ -72,6 +72,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        lifecycleScope.launchWhenResumed {
+            mainViewModel.showRecordButton.collect { shouldShow ->
+                if (shouldShow) binding.mic.visibility = View.VISIBLE
+                else binding.mic.visibility = View.INVISIBLE
+            }
+        }
+
         /** 録音用UIの設定　*/
         binding.mic.setOnClickListener {
             if (mainViewModel.isRecording.value) {
@@ -234,7 +241,6 @@ class MainActivity : AppCompatActivity() {
                 REQUEST_RECORD_AUDIO_PERMISSION
             )
     }
-
 
 
     private fun showSnackBarGrantNeeded() {

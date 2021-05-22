@@ -59,6 +59,8 @@ class MainViewModel @Inject constructor(
     private val _isInserting = MutableSharedFlow<Boolean>()
     val isInserting: SharedFlow<Boolean> = _isInserting
 
+    val showRecordButton = MutableStateFlow(true)
+
 
     /** 録音処理(Media Recorderに対する処理) */
     suspend fun startRecording() {

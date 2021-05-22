@@ -56,8 +56,10 @@ class AudioListFragment : Fragment() {
         lifecycleScope.launchWhenCreated {
             mainViewModel.dataStoreRepository.isFirstLaunch.first {
                 if (it == null || it == true)
-                    if (findNavController().currentDestination?.id == R.id.FirstFragment)
+                    if (findNavController().currentDestination?.id == R.id.FirstFragment) {
+                        mainViewModel.showRecordButton.value = false
                         findNavController().navigate(R.id.action_FirstFragment_to_viewPagerFragment)
+                    }
                 true
             }
         }

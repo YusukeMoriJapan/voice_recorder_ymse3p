@@ -32,14 +32,20 @@ class ThirdOnBoardFragment : Fragment() {
 
         view.findViewById<Button>(R.id.third_onb_finish_button).setOnClickListener {
             mainViewModel.viewModelScope.launch {
-                mainViewModel.dataStoreRepository.setIsFirstLaunch(false)
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                findNavController().navigate(R.id.action_viewPagerFragment_to_FirstFragment)
-                (requireActivity() as AppCompatActivity).supportActionBar?.show()
+                toAudioListFragment()
                 cancel()
             }
         }
         return view
+    }
+
+    suspend fun toAudioListFragment() {
+        mainViewModel.dataStoreRepository.setIsFirstLaunch(false)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        (requireActivity() as AppCompatActivity).supportActionBar?.show()
+        mainViewModel.showRecordButton.value = true
+        findNavController().navigate(R.id.action_viewPagerFragment_to_FirstFragment)
+
     }
 
 }
