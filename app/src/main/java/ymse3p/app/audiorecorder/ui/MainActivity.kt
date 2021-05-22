@@ -223,7 +223,7 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.RECORD_AUDIO,
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+//                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 ),
                 REQUEST_RECORD_AUDIO_PERMISSION
             )
@@ -237,6 +237,8 @@ class MainActivity : AppCompatActivity() {
                 REQUEST_RECORD_AUDIO_PERMISSION
             )
     }
+
+
 
     private fun showSnackBarGrantNeeded() {
         Snackbar.make(

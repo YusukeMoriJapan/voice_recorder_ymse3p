@@ -18,6 +18,11 @@
             app:popEnterAnim="@anim/nav_up_pop_enter_anim"
             app:popExitAnim="@anim/nav_up_pop_exit_anim"
             app:popUpTo="@id/FirstFragment"/>
+        <action
+            android:id="@+id/action_FirstFragment_to_viewPagerFragment"
+            app:destination="@id/viewPagerFragment"
+            app:popUpTo="@id/FirstFragment"
+            app:popUpToInclusive="true" />
     </fragment>
     <dialog
         android:id="@+id/audioSaveBottomSheet"
@@ -48,6 +53,17 @@
             app:exitAnim="@anim/nav_up_exit_anim"
             app:popEnterAnim="@anim/nav_up_pop_enter_anim"
             app:popExitAnim="@anim/nav_up_pop_exit_anim"
+            app:popUpTo="@id/FirstFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/viewPagerFragment"
+        android:name="ymse3p.app.audiorecorder.ui.fragments.onboarding.ViewPagerFragment"
+        android:label="fragment_view_pager"
+        tools:layout="@layout/fragment_view_pager" >
+        <action
+            android:id="@+id/action_viewPagerFragment_to_FirstFragment"
+            app:destination="@id/FirstFragment"
             app:popUpTo="@id/FirstFragment"
             app:popUpToInclusive="true" />
     </fragment>

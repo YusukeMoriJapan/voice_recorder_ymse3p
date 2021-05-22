@@ -51,6 +51,9 @@ class AudioListFragment : Fragment() {
                 }
             }
         }
+
+//        if (findNavController().currentDestination?.id == R.id.FirstFragment)
+//            findNavController().navigate(R.id.action_FirstFragment_to_viewPagerFragment)
     }
 
     override fun onCreateView(
@@ -129,7 +132,7 @@ class AudioListFragment : Fragment() {
                                 submitQuery(title = "%${query}%")
                             }
                             FilteringMode.DATE -> {
-
+                                /** 未実装 */
                             }
                         }
                     }

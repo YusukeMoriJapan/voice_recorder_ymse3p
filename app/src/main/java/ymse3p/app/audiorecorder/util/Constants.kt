@@ -19,7 +19,8 @@ class Constants {
 
         //Data store preferences
         const val RECORDED_AUDIO_ID = "recorded_audio_id"
-        const val PREFERENCES_NAME = "recorded_audio_number"
+        const val PREFERENCES_NAME = "appDataStorePreference"
+        const val IS_FIRST_LAUNCH = "is_first_launch"
 
         //Notification Channel ID
         const val NOTIFICATION_CHANNEL_ID_PLAYBACK = "playback_channel"
