@@ -7,76 +7,75 @@
 
     </data>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".ui.MainActivity">
+        android:layout_height="match_parent">
 
-        <com.google.android.material.appbar.AppBarLayout
-            android:id="@+id/appBarLayout"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/wrap_main_const_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:theme="@style/Theme.AudioRecorder.AppBarOverlay"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_height="match_parent"
+            android:layout_gravity="top"
+            app:layout_anchorGravity="top"
+            tools:context=".ui.MainActivity">
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
+            <com.google.android.material.appbar.AppBarLayout
+                android:id="@+id/appBarLayout"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
+                android:layout_height="wrap_content"
+                android:theme="@style/Theme.AudioRecorder.AppBarOverlay"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="?attr/colorPrimary"
+                    android:visibility="gone"
+                    app:popupTheme="@style/Theme.AudioRecorder.PopupOverlay" />
+
+            </com.google.android.material.appbar.AppBarLayout>
+
+            <include
+                android:id="@+id/include"
+                layout="@layout/content_main"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintBottom_toTopOf="@id/include_bottom_gap"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <View
+                android:id="@+id/include_bottom_gap"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/bottom_sheet_peak_height"
+                android:background="@drawable/playback_shadow"
                 android:visibility="gone"
-                app:popupTheme="@style/Theme.AudioRecorder.PopupOverlay" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
-        </com.google.android.material.appbar.AppBarLayout>
-
-        <include
-            android:id="@+id/include"
-            layout="@layout/content_main"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayoutBottom"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/appBarLayout"
-            app:layout_constraintVertical_bias="0.0" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/mic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/fab_margin"
-            android:backgroundTint="#FF0000"
-            app:backgroundTint="#FF0000"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayoutBottom"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_baseline_mic_24"
-            app:tint="#FFFFFF" />
-
-        <View
-            android:id="@+id/plaback_shadow"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:background="@drawable/playback_shadow"
-            app:layout_constraintBottom_toBottomOf="@+id/include" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/main_activity_snack_bar"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="@+id/plaback_shadow"
-            app:layout_constraintEnd_toStartOf="@+id/mic"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_anchor="@id/linearLayoutBottom"
+            app:layout_anchorGravity="top" />
 
         <LinearLayout
             android:id="@+id/linearLayoutBottom"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            tools:layout_height="wrap_content"
             android:background="@color/playbackUiColor"
             android:elevation="8dp"
             android:orientation="vertical"
@@ -84,11 +83,8 @@
             android:paddingTop="10dp"
             android:paddingEnd="5dp"
             android:paddingBottom="0dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:visibility="visible">
+            app:behavior_peekHeight="@dimen/bottom_sheet_peak_height"
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
             <TextView
                 android:id="@+id/textView_title"
@@ -197,7 +193,32 @@
                 </LinearLayout>
 
             </LinearLayout>
+
         </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/gap_between_mic_bottom"
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_gravity="top"
+            app:layout_anchor="@id/main_activity_snack_bar"
+            app:layout_anchorGravity="top|end">
+
+        </View>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/mic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_margin="@dimen/fab_margin"
+            android:backgroundTint="#FF0000"
+            app:backgroundTint="#FF0000"
+            app:layout_anchor="@+id/gap_between_mic_bottom"
+            app:layout_anchorGravity="top|end"
+            app:srcCompat="@drawable/ic_baseline_mic_24"
+            app:tint="#FFFFFF" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

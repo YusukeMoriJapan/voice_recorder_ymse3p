@@ -7,4 +7,5 @@ import kotlinx.coroutines.flow.MutableStateFlow
 @HiltAndroidApp
 class MyApplication : Application() {
     val playbackSpeedFlow = MutableStateFlow(1F)
+    val skipSilenceFlow = MutableStateFlow(false)
 }

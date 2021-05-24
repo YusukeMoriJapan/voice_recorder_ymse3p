@@ -96,6 +96,13 @@ class ServicePlaybackComponentImpl
             }
         }
 
+        /** 無音スキップ機能のオンオフ */
+        serviceScope.launch(Dispatchers.Main) {
+            (myApplication as MyApplication).skipSilenceFlow.collect { skipSilence ->
+                exoPlayer.skipSilenceEnabled = skipSilence
+            }
+        }
+
 
     }
 

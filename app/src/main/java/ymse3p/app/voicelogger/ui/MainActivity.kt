@@ -1,18 +1,24 @@
 package ymse3p.app.voicelogger.ui
 
 import android.Manifest
+import android.app.ActionBar
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.MarginLayoutParamsCompat
+import androidx.core.view.marginBottom
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
@@ -55,10 +61,15 @@ class MainActivity : AppCompatActivity() {
         }
         // playbackStateの変更を受け取る
         lifecycleScope.launchWhenCreated {
-            playbackViewModel.playbackState.collect { state ->
-                if (binding.linearLayoutBottom.visibility == View.GONE)
-                    binding.linearLayoutBottom.visibility = View.VISIBLE
-                changePlaybackState(state)
+            playbackViewModel.playbackState.collect { playbackState ->
+                if (binding.linearLayoutBottom.height == 0) {
+                    binding.linearLayoutBottom.apply {
+                        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        BottomSheetBehavior.from(this).state = BottomSheetBehavior.STATE_COLLAPSED
+                    }
+                    binding.includeBottomGap.visibility = View.VISIBLE
+                }
+                changePlaybackState(playbackState)
             }
         }
 
