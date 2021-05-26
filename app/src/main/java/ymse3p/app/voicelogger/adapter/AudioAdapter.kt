@@ -1,11 +1,13 @@
 package ymse3p.app.voicelogger.adapter
 
 import android.app.Application
+import android.content.pm.ActivityInfo
 import android.media.session.PlaybackState
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.*
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +26,7 @@ import ymse3p.app.voicelogger.R
 import ymse3p.app.voicelogger.data.database.entities.AudioEntity
 import ymse3p.app.voicelogger.databinding.AudioRowLayoutBinding
 import ymse3p.app.voicelogger.models.GpsData
+import ymse3p.app.voicelogger.ui.fragments.dialogs.DeleteAlertDialogFragment
 import ymse3p.app.voicelogger.util.AudioDiffUtil
 import ymse3p.app.voicelogger.util.Constants.Companion.MEDIA_METADATA_QUEUE
 import ymse3p.app.voicelogger.util.ResourceUtil
@@ -40,7 +43,7 @@ class AudioAdapter(
     private val playBackViewModel: PlayBackViewModel,
     private val requireActivity: FragmentActivity
 ) : RecyclerView.Adapter<AudioAdapter.MyViewHolder>(),
-    ActionMode.Callback, CoroutineScope {
+    ActionMode.Callback, CoroutineScope, DeleteAlertDialogFragment.DeleteAlertDialogListener {
 
     override val coroutineContext: CoroutineContext
         get() = playBackViewModel.viewModelScope.coroutineContext
@@ -373,27 +376,10 @@ class AudioAdapter(
 
     override fun onActionItemClicked(actionMode: ActionMode?, menu: MenuItem?): Boolean {
         if (menu?.itemId == R.id.delete_audio_menu) {
-            val currentPlayId =
-                playBackViewModel.metadata.replayCache.firstOrNull()?.description?.mediaId?.toInt()
-            val selectedAudioIdList =
-                List(selectedAudioList.size) { i -> selectedAudioList[i].id }
-            if (selectedAudioIdList.contains(currentPlayId))
-                playBackViewModel.stop()
-
-            selectedAudioList.forEach { audioEntity ->
-                val deleteFilePath = audioEntity.audioUri.lastPathSegment
-                if (deleteFilePath !== null)
-                    File(
-                        mainViewModel.getApplication<Application>().filesDir,
-                        deleteFilePath
-                    ).delete()
-                mainViewModel.deleteAudio(audioEntity)
-            }
+            val dialog = DeleteAlertDialogFragment.create(this)
+            dialog.show(requireActivity.supportFragmentManager, "DeleteAlertDialogFragment")
+            requireActivity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         }
-        showSnackBar("${selectedAudioList.size}個削除されました")
-        multiSelection = false
-        selectedAudioList.clear()
-        actionMode?.finish()
         return true
     }
 
@@ -459,6 +445,47 @@ class AudioAdapter(
     fun clearContextualActionMode() {
         if (this::mActionMode.isInitialized) {
             mActionMode.finish()
+        }
+    }
+
+    /** DeleteAlertDialogFragmentListenerのメソッド */
+    override fun onDialogPositiveClick(dialog: DialogFragment) {
+        val currentPlayId =
+            playBackViewModel.metadata.replayCache.firstOrNull()?.description?.mediaId?.toInt()
+        val selectedAudioIdList =
+            List(selectedAudioList.size) { i -> selectedAudioList[i].id }
+        if (selectedAudioIdList.contains(currentPlayId))
+            playBackViewModel.stop()
+
+        selectedAudioList.forEach { audioEntity ->
+            val deleteFilePath = audioEntity.audioUri.lastPathSegment
+            if (deleteFilePath !== null)
+                File(
+                    mainViewModel.getApplication<Application>().filesDir,
+                    deleteFilePath
+                ).delete()
+            mainViewModel.deleteAudio(audioEntity)
+        }
+        showSnackBar("${selectedAudioList.size}個削除されました")
+        multiSelection = false
+        selectedAudioList.clear()
+        if (this::mActionMode.isInitialized) mActionMode.finish()
+
+        /** クリック処理終了後、即座に回転を許容すると、dialogが閉じないためディレイを持たせる */
+        launch(Dispatchers.Main) {
+            delay(100)
+            requireActivity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            cancel()
+        }
+
+    }
+
+    override fun onDialogNegativeClick(dialog: DialogFragment) {
+        /** クリック処理終了後、即座に回転を許容すると、dialogが閉じないためディレイを持たせる */
+        launch(Dispatchers.Main) {
+            delay(100)
+            requireActivity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            cancel()
         }
     }
 }

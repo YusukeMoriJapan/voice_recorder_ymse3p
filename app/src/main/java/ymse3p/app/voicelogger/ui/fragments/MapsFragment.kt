@@ -22,7 +22,10 @@ import kotlinx.coroutines.flow.collect
 import ymse3p.app.voicelogger.R
 import ymse3p.app.voicelogger.databinding.FragmentMapsBinding
 import ymse3p.app.voicelogger.models.GpsData
+import ymse3p.app.voicelogger.util.Constants
 import ymse3p.app.voicelogger.viewmodels.playbackViewModel.PlayBackViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
@@ -60,8 +63,11 @@ class MapsFragment : Fragment() {
             playbackViewModel.playbackState.collect { playbackState ->
                 val nearestGpsIndex = calcNearestGpsIndex(playbackState)
                 val nearestLatLng: LatLng? = nearestGpsIndex?.let { calculateNearest(it) }
+                val nearestTime: Long? =
+                    nearestGpsIndex?.let { args.audioEntity.gpsDataList?.get(it)?.time }
+
                 currentMarker?.remove()
-                if (nearestLatLng !== null) refreshMapState(googleMap, nearestLatLng)
+                if (nearestLatLng !== null) refreshMapState(googleMap, nearestLatLng, nearestTime)
             }
         }
     }
@@ -116,11 +122,21 @@ class MapsFragment : Fragment() {
             LatLng(nearestGpsData.latitude, nearestGpsData.longitude)
     }
 
-    private fun refreshMapState(googleMap: GoogleMap, nearestLatLng: LatLng) {
+
+    private fun refreshMapState(googleMap: GoogleMap, nearestLatLng: LatLng, nearestTime: Long?) {
         googleMap.apply {
+
+            var date: Date? = null
+            var locationName:String? = null
+            if (nearestTime != null) {
+                date = Date(nearestTime)
+                val dateFormat = SimpleDateFormat("HH時mm分ss秒")
+                locationName = dateFormat.format(date)
+            }
             /** 最も近いGps PositionにMarkerをたてる */
             currentMarker =
-                addMarker(MarkerOptions().position(nearestLatLng).title("現在地"))
+                addMarker(MarkerOptions().position(nearestLatLng).title(locationName ?: ""))
+                    ?.apply { showInfoWindow() }
             /** カメラをMarkerに移動する */
             animateCamera(CameraUpdateFactory.newLatLng(nearestLatLng), 500, null)
         }

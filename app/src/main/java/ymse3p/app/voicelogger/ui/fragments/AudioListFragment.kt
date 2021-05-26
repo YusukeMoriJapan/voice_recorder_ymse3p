@@ -1,21 +1,24 @@
 package ymse3p.app.voicelogger.ui.fragments
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SearchView
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import ymse3p.app.voicelogger.R
 import ymse3p.app.voicelogger.adapter.AudioAdapter
 import ymse3p.app.voicelogger.databinding.FragmentAudioListBinding
+import ymse3p.app.voicelogger.ui.fragments.dialogs.DeleteAlertDialogFragment
 import ymse3p.app.voicelogger.util.FilteringMode
 import ymse3p.app.voicelogger.viewmodels.MainViewModel
 import ymse3p.app.voicelogger.viewmodels.playbackViewModel.PlayBackViewModel
@@ -158,11 +161,35 @@ class AudioListFragment : Fragment() {
                 true
             }
             R.id.all_sample_data_delete -> {
-                mainViewModel.deleteAllSampleAudio()
+                val dialog = DeleteAlertDialogFragment.create(object :
+                    DeleteAlertDialogFragment.DeleteAlertDialogListener {
+                    override fun onDialogPositiveClick(dialog: DialogFragment) {
+                        mainViewModel.deleteAllSampleAudio()
+                        acceptScreenRotate()
+                    }
+
+                    override fun onDialogNegativeClick(dialog: DialogFragment) {
+                        acceptScreenRotate()
+                    }
+                })
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                dialog.show(parentFragmentManager, null)
                 true
             }
             R.id.delete_all_data -> {
-                mainViewModel.deleteAllAudio()
+                val dialog = DeleteAlertDialogFragment.create(object :
+                    DeleteAlertDialogFragment.DeleteAlertDialogListener {
+                    override fun onDialogPositiveClick(dialog: DialogFragment) {
+                        mainViewModel.deleteAllAudio()
+                        acceptScreenRotate()
+                    }
+
+                    override fun onDialogNegativeClick(dialog: DialogFragment) {
+                        acceptScreenRotate()
+                    }
+                })
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                dialog.show(parentFragmentManager, null)
                 true
             }
             R.id.search_filtering -> {
@@ -219,5 +246,13 @@ class AudioListFragment : Fragment() {
 
     private fun showShimmerEffect() {
         binding.audioListRecyclerview.showShimmer()
+    }
+
+    fun acceptScreenRotate() {
+        lifecycleScope.launchWhenCreated {
+            delay(100)
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            cancel()
+        }
     }
 }

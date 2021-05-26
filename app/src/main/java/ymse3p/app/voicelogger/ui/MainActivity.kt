@@ -1,7 +1,6 @@
 package ymse3p.app.voicelogger.ui
 
 import android.Manifest
-import android.app.ActionBar
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.media.MediaMetadataCompat
@@ -13,9 +12,7 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.view.MarginLayoutParamsCompat
-import androidx.core.view.marginBottom
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -43,6 +40,8 @@ class MainActivity : AppCompatActivity() {
     /** ViewModels */
     private val mainViewModel by viewModels<MainViewModel>()
     private val playbackViewModel by viewModels<PlayBackViewModel>()
+
+    private val playSpeedList: List<Float> = listOf(1F, 1.25F, 1.5F, 1.75F, 2.0F)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launchWhenResumed {
+        lifecycleScope.launchWhenCreated {
             mainViewModel.showRecordButton.collect { shouldShow ->
                 if (shouldShow) binding.mic.visibility = View.VISIBLE
                 else binding.mic.visibility = View.INVISIBLE
@@ -134,20 +133,38 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        binding.changeSpeedButton.setOnClickListener(object : View.OnClickListener {
-            private val playSpeedList: List<Float> =
-                listOf(1F, 1.3F, 1.5F, 1.6F, 1.7F, 1.8F, 1.9F, 2.0F)
-            private var currentIndex = 0
+        /** 再生速度変更ボタン */
+        val speedButtonList = mutableListOf<Button?>()
+        val speedButtonSetView: ViewGroup = binding.playbackSpeedButtonSet
 
-            override fun onClick(v: View?) {
-                if (++currentIndex == playSpeedList.size)
-                    currentIndex = 0
-                (application as MyApplication).playbackSpeedFlow.value =
-                    playSpeedList[currentIndex]
-                val buttonText = "${playSpeedList[currentIndex]}" + "x"
-                (v as Button).text = buttonText
+        for (i in 0 until speedButtonSetView.childCount) {
+            val button = speedButtonSetView.getChildAt(i) as Button?
+            button?.text = playSpeedList.getOrNull(i)?.toString()
+            speedButtonList.add(button)
+        }
+
+        speedButtonList.forEachIndexed { index, button ->
+            button?.setOnClickListener {
+                (application as MyApplication).playbackSpeedFlow.value = playSpeedList[index]
             }
-        })
+        }
+
+        /** 現在の再生速度を表示するボタン */
+        binding.changeSpeedButton.setOnClickListener {
+            BottomSheetBehavior.from(binding.linearLayoutBottom).state =
+                BottomSheetBehavior.STATE_EXPANDED
+        }
+
+        lifecycleScope.launchWhenCreated {
+            (application as MyApplication).playbackSpeedFlow.collect { playbackSpeed ->
+                val speedText = playbackSpeed.toString() + "x"
+                binding.changeSpeedButton.text = speedText
+            }
+        }
+
+        binding.switchCutSilence.setOnCheckedChangeListener { buttonView, isChecked ->
+            (application as MyApplication).skipSilenceFlow.value = isChecked
+        }
     }
 
     override fun onStart() {

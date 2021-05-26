@@ -9,7 +9,7 @@
     <!-- TODO: Update blank fragment layout -->
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/onboard_image_1"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="24dp"
@@ -17,7 +17,7 @@
         android:layout_marginEnd="16dp"
         android:adjustViewBounds="false"
         android:baselineAlignBottom="false"
-        android:src="@drawable/onboarding_page_1"
+        tools:src="@drawable/onboarding_page_1"
         app:layout_constraintBottom_toTopOf="@+id/first_onb_next_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"

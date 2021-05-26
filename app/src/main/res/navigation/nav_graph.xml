@@ -20,7 +20,7 @@
             app:popUpTo="@id/FirstFragment"/>
         <action
             android:id="@+id/action_FirstFragment_to_viewPagerFragment"
-            app:destination="@id/viewPagerFragment"
+            app:destination="@id/ViewPagerFragment"
             app:popUpTo="@id/FirstFragment"
             app:popUpToInclusive="true" />
     </fragment>
@@ -57,14 +57,14 @@
             app:popUpToInclusive="true" />
     </fragment>
     <fragment
-        android:id="@+id/viewPagerFragment"
+        android:id="@+id/ViewPagerFragment"
         android:name="ymse3p.app.voicelogger.ui.fragments.onboarding.ViewPagerFragment"
         android:label="fragment_view_pager"
         tools:layout="@layout/fragment_view_pager" >
         <action
             android:id="@+id/action_viewPagerFragment_to_FirstFragment"
             app:destination="@id/FirstFragment"
-            app:popUpTo="@id/FirstFragment"
+            app:popUpTo="@id/ViewPagerFragment"
             app:popUpToInclusive="true" />
     </fragment>
 </navigation>
