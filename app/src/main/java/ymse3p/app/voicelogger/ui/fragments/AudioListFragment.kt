@@ -208,10 +208,6 @@ class AudioListFragment : Fragment() {
                             mainViewModel.filteringMode.value = FilteringMode.TITLE
                             true
                         }
-                        R.id.filter_date -> {
-                            mainViewModel.filteringMode.value = FilteringMode.DATE
-                            true
-                        }
                         else -> true
                     }
                 }
