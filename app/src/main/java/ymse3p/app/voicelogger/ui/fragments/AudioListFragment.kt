@@ -1,5 +1,6 @@
 package ymse3p.app.voicelogger.ui.fragments
 
+import android.app.DatePickerDialog
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.*
@@ -19,9 +20,12 @@ import ymse3p.app.voicelogger.R
 import ymse3p.app.voicelogger.adapter.AudioAdapter
 import ymse3p.app.voicelogger.databinding.FragmentAudioListBinding
 import ymse3p.app.voicelogger.ui.fragments.dialogs.DeleteAlertDialogFragment
+import ymse3p.app.voicelogger.util.Constants.Companion.DATABASE_DATE_FORMAT
 import ymse3p.app.voicelogger.util.FilteringMode
 import ymse3p.app.voicelogger.viewmodels.MainViewModel
 import ymse3p.app.voicelogger.viewmodels.playbackViewModel.PlayBackViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @AndroidEntryPoint
@@ -32,6 +36,10 @@ class AudioListFragment : Fragment() {
 
     private var _binding: FragmentAudioListBinding? = null
     private val binding get() = _binding!!
+
+    private var lowerDate: String? = null
+    private var upperDate: String? = null
+    private var queryText: String? = ""
 
     private val mAdapter by lazy {
         AudioAdapter(
@@ -134,21 +142,8 @@ class AudioListFragment : Fragment() {
             }
 
             override fun onQueryTextChange(rawQuery: String?): Boolean {
-                val query = rawQuery?.trim()
-                if (query != null)
-                    mainViewModel.repository.localDataSource.apply {
-                        when (mainViewModel.filteringMode.value) {
-                            FilteringMode.ADDRESS -> {
-                                submitQuery(address = "%${query}%")
-                            }
-                            FilteringMode.TITLE -> {
-                                submitQuery(title = "%${query}%")
-                            }
-                            FilteringMode.DATE -> {
-                                /** 未実装 */
-                            }
-                        }
-                    }
+                queryText = rawQuery?.trim()
+                if (queryText != null) submitQuery()
                 return false
             }
         })
@@ -208,6 +203,26 @@ class AudioListFragment : Fragment() {
                             mainViewModel.filteringMode.value = FilteringMode.TITLE
                             true
                         }
+                        R.id.filter_date_lower -> {
+                            showDatePicker { date ->
+                                lowerDate = date
+                                submitQuery()
+                            }
+                            true
+                        }
+                        R.id.filter_date_upper -> {
+                            showDatePicker { date ->
+                                upperDate = date
+                                submitQuery()
+                            }
+                            true
+                        }
+                        R.id.filter_date_reset -> {
+                            lowerDate = null
+                            upperDate = null
+                            submitQuery()
+                            true
+                        }
                         else -> true
                     }
                 }
@@ -216,6 +231,52 @@ class AudioListFragment : Fragment() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun submitQuery() {
+        mainViewModel.repository.localDataSource.apply {
+            when (mainViewModel.filteringMode.value) {
+                FilteringMode.ADDRESS -> {
+                    submitQuery(
+                        address = "%$queryText%",
+                        lowerDate = lowerDate,
+                        upperDate = upperDate
+                    )
+                }
+                FilteringMode.TITLE -> {
+                    submitQuery(
+                        title = "%$queryText%",
+                        lowerDate = lowerDate,
+                        upperDate = upperDate
+                    )
+                }
+                FilteringMode.DATE -> {
+                    /** 未実装 */
+                }
+            }
+        }
+    }
+
+    private fun showDatePicker(setDateRangeAndSubmit: (String) -> Unit) {
+        val now = Calendar.getInstance()
+        val datePicker = DatePickerDialog(
+            requireContext(),
+            { view, year, month, dayOfMonth ->
+                val format = SimpleDateFormat(DATABASE_DATE_FORMAT)
+                val selectedDate = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                }
+
+                setDateRangeAndSubmit(format.format(selectedDate.time))
+            },
+            now.get(Calendar.YEAR),
+            now.get(Calendar.MONTH),
+            now.get(Calendar.DAY_OF_MONTH)
+        )
+        datePicker.show()
+
     }
 
 

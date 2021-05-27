@@ -16,8 +16,13 @@ interface AudioDao {
 //    @Query("SELECT * FROM audio_table ORDER BY id DESC")
 //    fun readAudio(): Flow<List<AudioEntity>>
 
-    @Query("SELECT * FROM audio_table WHERE startAddress LIKE :address OR endAddress LIKE :address OR audioTitle LIKE :title ORDER BY id DESC")
-    fun searchAudio(address: String? = null, title: String? = null): Flow<List<AudioEntity>>
+    @Query("SELECT * FROM audio_table WHERE audioCreateDate BETWEEN :lowerDate AND :upperDate AND (startAddress LIKE :address OR endAddress LIKE :address OR audioTitle LIKE :title) ORDER BY id DESC")
+    fun searchAudio(
+        address: String? = null,
+        title: String? = null,
+        lowerDate: String = "1700-01-01",
+        upperDate: String = "4000-12-31",
+    ): Flow<List<AudioEntity>>
 
     @Query("SELECT * FROM audio_table WHERE id = :id")
     fun readAudioFromId(id: Int): Flow<AudioEntity>

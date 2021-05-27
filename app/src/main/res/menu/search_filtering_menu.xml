@@ -16,9 +16,21 @@
         app:showAsAction="never"
         android:orderInCategory="99"
         android:title="タイトルで絞込" />
-<!--    <item-->
-<!--        android:id="@+id/filter_date"-->
-<!--        app:showAsAction="never"-->
-<!--        android:orderInCategory="100"-->
-<!--        android:title="日付で絞込" />-->
+    <item
+        android:id="@+id/filter_date_lower"
+        app:showAsAction="never"
+        android:orderInCategory="100"
+        android:title="日付で絞込(下限設定)" />
+
+    <item
+        android:id="@+id/filter_date_upper"
+        app:showAsAction="never"
+        android:orderInCategory="100"
+        android:title="日付で絞込(上限設定)" />
+
+    <item
+        android:id="@+id/filter_date_reset"
+        app:showAsAction="never"
+        android:orderInCategory="100"
+        android:title="日付範囲をリセット" />
 </menu>

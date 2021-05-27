@@ -18,13 +18,22 @@ class LocalDataSource @Inject constructor(
         submitQuery("%%")
     }
 
-    fun submitQuery(address: String? = null, title: String? = null) {
+    fun submitQuery(
+        address: String? = null,
+        title: String? = null,
+        upperDate: String? = null,
+        lowerDate: String? = null
+    ) {
         GlobalScope.launch(Dispatchers.IO) {
             if (::readAudioJob.isInitialized) readAudioJob.cancel()
 
+            val upperD = upperDate ?: "4000-12-31"
+            val lowerD = lowerDate ?: "1700-01-01"
+
             readAudioJob =
                 launch {
-                    audioDao.searchAudio(address, title).collect { publicAudioListFlow.emit(it) }
+                    audioDao.searchAudio(address, title, upperDate = upperD, lowerDate = lowerD)
+                        .collect { publicAudioListFlow.emit(it) }
                 }
         }
     }
@@ -33,9 +42,9 @@ class LocalDataSource @Inject constructor(
         return publicAudioListFlow
     }
 
-    private fun searchAudio(address: String): Flow<List<AudioEntity>> {
-        return audioDao.searchAudio(address)
-    }
+//    private fun searchAudio(address: String): Flow<List<AudioEntity>> {
+//        return audioDao.searchAudio(address)
+//    }
 
     fun readAudioFromId(id: Int): Flow<AudioEntity> {
         return audioDao.readAudioFromId(id)
